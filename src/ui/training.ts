@@ -12,8 +12,10 @@ import {
 } from "../lib/reduction";
 import { ensureSegments } from "../lib/segment";
 import { recordAttempt } from "../lib/stats";
+import { buildImagePrompt, inferConcept } from "../lib/visualPrompt";
 import { PassageRepository } from "../storage/repository";
-import type { Passage, ReductionLevel, TrainingStage } from "../types";
+import type { Passage, ReductionLevel, TrainingStage, VisualAnchor } from "../types";
+import { mountShareControls } from "./sharePanel";
 
 export type TrainingCallbacks = {
   onBack: () => void;
@@ -23,7 +25,7 @@ const STAGES: { id: TrainingStage; label: string; ready: boolean }[] = [
   { id: "read", label: "Read", ready: true },
   { id: "understand", label: "Understand", ready: true },
   { id: "reduce", label: "Reduce", ready: true },
-  { id: "visualize", label: "Visualize", ready: false },
+  { id: "visualize", label: "Visualize", ready: true },
   { id: "reconstruct", label: "Reconstruct", ready: true },
   { id: "recall", label: "Recall", ready: false },
   { id: "master", label: "Master", ready: false },
@@ -53,6 +55,7 @@ export function renderTraining(
         </div>
         <button class="btn secondary" type="button" id="back-lib">Library</button>
       </header>
+      <div id="share-host"></div>
       <nav class="stage-nav panel" aria-label="Training stages">
         ${STAGES.map(
           (s) =>
@@ -64,6 +67,8 @@ export function renderTraining(
   `;
 
   root.querySelector("#back-lib")?.addEventListener("click", callbacks.onBack);
+  const shareHost = root.querySelector<HTMLElement>("#share-host");
+  if (shareHost) mountShareControls(shareHost, passage);
   root.querySelectorAll<HTMLButtonElement>("[data-stage]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const next = btn.dataset.stage as TrainingStage;
@@ -81,6 +86,7 @@ export function renderTraining(
     });
   else if (stage === "understand") renderUnderstand(panel, repo, passage);
   else if (stage === "reduce") renderReduce(panel, repo, passage);
+  else if (stage === "visualize") renderVisualize(panel, repo, passage);
   else if (stage === "reconstruct") renderReconstruct(panel, repo, passage);
   else {
     panel.innerHTML = `<h2>${stage}</h2><p class="empty">This stage arrives in a later milestone.</p>`;
@@ -332,6 +338,111 @@ function renderReconstruct(
       checked = null;
       message = "Attempt reset. Bring the hint count down to 0.";
       paint();
+    });
+  };
+
+  paint();
+}
+
+function renderVisualize(
+  panel: HTMLElement,
+  repo: PassageRepository,
+  passage: Passage,
+): void {
+  const paint = () => {
+    panel.innerHTML = `
+      <h2>Visualize</h2>
+      <p class="empty">Build a storyboard of mental anchors. Copy each image prompt into ChatGPT image generation, then store your association here.</p>
+      <div class="grid">
+        ${passage.segments
+          .map((seg) => {
+            const anchor = passage.visualAnchors.find((a) => a.segmentId === seg.id);
+            const concept = anchor?.concept || inferConcept(seg.text);
+            const prompt = anchor?.imagePrompt || buildImagePrompt(seg, concept);
+            return `<article class="visual-card">
+              <h3>Segment ${seg.index + 1}</h3>
+              <p>${esc(seg.text)}</p>
+              <label>Visual concept
+                <input data-concept="${seg.id}" value="${esc(concept)}" />
+              </label>
+              <label>Image prompt
+                <textarea data-prompt="${seg.id}" readonly>${esc(prompt)}</textarea>
+              </label>
+              <label>Your note / image URL (optional)
+                <input data-note="${seg.id}" value="${esc(anchor?.userNote || anchor?.imageUrl || "")}" />
+              </label>
+              <div class="row">
+                <button class="btn secondary" type="button" data-copy="${seg.id}">Copy image prompt</button>
+                <button class="btn" type="button" data-save="${seg.id}">Save anchor</button>
+              </div>
+            </article>`;
+          })
+          .join("")}
+      </div>
+      <p class="toast" id="viz-toast" hidden></p>
+    `;
+
+    const toast = (msg: string) => {
+      const el = panel.querySelector<HTMLElement>("#viz-toast");
+      if (!el) return;
+      el.hidden = false;
+      el.textContent = msg;
+    };
+
+    panel.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.copy!;
+        const text = panel.querySelector<HTMLTextAreaElement>(`[data-prompt="${id}"]`)?.value ?? "";
+        await navigator.clipboard.writeText(text);
+        toast("Image prompt copied.");
+      });
+    });
+
+    panel.querySelectorAll<HTMLButtonElement>("[data-save]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.save!;
+        const seg = passage.segments.find((s) => s.id === id);
+        if (!seg) return;
+        const concept =
+          panel.querySelector<HTMLInputElement>(`[data-concept="${id}"]`)?.value ||
+          inferConcept(seg.text);
+        const prompt = buildImagePrompt(seg, concept);
+        const note =
+          panel.querySelector<HTMLInputElement>(`[data-note="${id}"]`)?.value || undefined;
+        const now = new Date().toISOString();
+        const anchor: VisualAnchor = {
+          segmentId: id,
+          concept,
+          imagePrompt: prompt,
+          userNote: note,
+          imageUrl: note?.startsWith("http") ? note : undefined,
+          updatedAt: now,
+        };
+        const others = passage.visualAnchors.filter((a) => a.segmentId !== id);
+        const updated: Passage = {
+          ...passage,
+          visualAnchors: [...others, anchor],
+          stageProgress: {
+            ...passage.stageProgress,
+            visualize: { completed: true, updatedAt: now },
+          },
+          updatedAt: now,
+        };
+        savePassage(repo, updated);
+        Object.assign(passage, updated);
+        toast("Visual anchor saved.");
+        paint();
+      });
+    });
+
+    panel.querySelectorAll<HTMLInputElement>("[data-concept]").forEach((input) => {
+      input.addEventListener("change", () => {
+        const id = input.dataset.concept!;
+        const seg = passage.segments.find((s) => s.id === id);
+        if (!seg) return;
+        const area = panel.querySelector<HTMLTextAreaElement>(`[data-prompt="${id}"]`);
+        if (area) area.value = buildImagePrompt(seg, input.value);
+      });
     });
   };
 

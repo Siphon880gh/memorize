@@ -249,6 +249,46 @@ textarea {
   border-top: 0;
 }
 
+.table-wrap {
+  overflow-x: auto;
+}
+
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.score-table th,
+.score-table td {
+  text-align: left;
+  padding: 0.55rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.score-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.visual-card {
+  border-top: 1px solid var(--line);
+  padding-top: 0.85rem;
+}
+
+.visual-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+label.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+}
+
 .stats-line {
   color: var(--muted);
   margin: 0 0 1rem;

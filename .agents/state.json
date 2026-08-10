@@ -1,9 +1,9 @@
 {
-  "current_epic_id": "E5",
-  "current_milestone_id": "M6",
+  "current_epic_id": "E8",
+  "current_milestone_id": "M9",
   "status": "loop_running",
   "paused": false,
-  "last_updated_iso": "2026-08-10T13:35:04.913Z",
+  "last_updated_iso": "2026-08-10T13:37:50.568Z",
   "product": {
     "app_name": "Memorize Script",
     "one_liner": "Client-side training system for memorizing scriptures, speeches, and spoken scripts using progressive reduction, visuals, ordering drills, and hint-to-zero mastery.",
@@ -16,7 +16,10 @@
     "M2.done",
     "M3.done",
     "M4.done",
-    "M5.done"
+    "M5.done",
+    "M6.done",
+    "M7.done",
+    "M8.done"
   ],
   "decisions": {
     "stack": "Vite + TypeScript + vanilla DOM",
@@ -81,7 +84,7 @@
     "data_model_doc": "docs/DATA_MODEL.md"
   },
   "loop": {
-    "tick": 6,
+    "tick": 9,
     "error_round": 0,
     "last_verify": "PASS",
     "failed_milestone_id": null,
@@ -95,6 +98,7 @@
     "M1 PASS — advancing to M2.",
     "M2 PASS — advancing to M3.",
     "M3 PASS — advancing to M4.",
-    "M4+M5 PASS — advancing to M6."
+    "M4+M5 PASS — advancing to M6.",
+    "M6-M8 PASS — advancing to M9."
   ]
 }

@@ -3,6 +3,8 @@ import { PASSAGE_TYPES, type Passage, type PassageType } from "../types";
 
 export type LibraryCallbacks = {
   onOpenPassage: (id: string) => void;
+  onScoreboard?: () => void;
+  onPsalm91Starter?: () => void;
 };
 
 function typeLabel(t: PassageType): string {
@@ -21,6 +23,10 @@ export function renderLibrary(
       <div>
         <h1 class="brand">Memorize <span>Script</span></h1>
         <p class="tagline">Train long spoken material until hints drop to zero.</p>
+      </div>
+      <div class="row">
+        <button class="btn secondary" type="button" id="goto-scoreboard">Scoreboard</button>
+        <button class="btn secondary" type="button" id="add-psalm91">Psalm 91 starter</button>
       </div>
     </header>
     <section class="panel">
@@ -85,6 +91,12 @@ export function renderLibrary(
 
   root.querySelector("#cancel-edit")?.addEventListener("click", () => {
     renderLibrary(root, repo, callbacks, null);
+  });
+  root.querySelector("#goto-scoreboard")?.addEventListener("click", () => {
+    callbacks.onScoreboard?.();
+  });
+  root.querySelector("#add-psalm91")?.addEventListener("click", () => {
+    callbacks.onPsalm91Starter?.();
   });
 
   root.querySelectorAll<HTMLButtonElement>("[data-open]").forEach((btn) => {
