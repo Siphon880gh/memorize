@@ -20,19 +20,19 @@ export function renderLibrary(
   editing?: Passage | null,
 ): void {
   const passages = repo.listPassages();
+  const count = passages.length;
   root.innerHTML = `
     <header class="topbar">
       <div>
         <h1 class="brand">Memorize <span>Script</span></h1>
         <p class="tagline">Train long spoken material until hints drop to zero.</p>
       </div>
-      <div class="row">
+      <nav class="row top-nav" aria-label="Primary">
+        <button class="btn secondary nav-current" type="button" id="goto-library" aria-current="page">Library (${count})</button>
         <button class="btn secondary" type="button" id="goto-scoreboard">Scoreboard</button>
-        <button class="btn secondary" type="button" id="add-psalm91">Psalm 91 starter</button>
-        <button class="btn secondary" type="button" id="add-daily-bread">Daily Bread Prayer</button>
         <button class="btn secondary" type="button" id="export-data">Export</button>
         <label class="btn secondary" style="cursor:pointer">Import<input id="import-data" type="file" accept="application/json,.json" hidden /></label>
-      </div>
+      </nav>
     </header>
     <section class="panel">
       <h2>${editing ? "Edit passage" : "Add passage"}</h2>
@@ -64,11 +64,17 @@ export function renderLibrary(
         <p class="toast" id="form-toast" hidden></p>
       </form>
     </section>
-    <section class="panel">
-      <h2>Your library</h2>
+    <section class="panel" id="library-panel">
+      <div class="row library-head">
+        <h2 style="margin:0">Your library (${count})</h2>
+        <div class="row starter-row">
+          <button class="btn secondary" type="button" id="add-psalm91">Psalm 91 starter</button>
+          <button class="btn secondary" type="button" id="add-daily-bread">Daily Bread Prayer</button>
+        </div>
+      </div>
       ${
-        passages.length === 0
-          ? `<p class="empty">No passages yet. Add a speech, monologue, or scripture text to begin.</p>`
+        count === 0
+          ? `<p class="empty">No passages yet. Add one above, or use a starter.</p>`
           : `<ul class="passage-list">${passages.map(renderItem).join("")}</ul>`
       }
     </section>
@@ -96,6 +102,9 @@ export function renderLibrary(
 
   root.querySelector("#cancel-edit")?.addEventListener("click", () => {
     renderLibrary(root, repo, callbacks, null);
+  });
+  root.querySelector("#goto-library")?.addEventListener("click", () => {
+    root.querySelector("#library-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   root.querySelector("#goto-scoreboard")?.addEventListener("click", () => {
     callbacks.onScoreboard?.();

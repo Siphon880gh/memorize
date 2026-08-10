@@ -10,6 +10,7 @@ export function renderScoreboard(
 
   const paint = () => {
     const rows = sortScoreboard(toScoreboardRows(repo.listPassages()), sortBy);
+    const count = rows.length;
     root.innerHTML = `
       <div class="app-shell">
         <header class="topbar">
@@ -17,7 +18,10 @@ export function renderScoreboard(
             <h1 class="brand">Memorize <span>Script</span></h1>
             <p class="tagline">Personal scoreboard — chase zero hints.</p>
           </div>
-          <button class="btn secondary" type="button" id="back-lib">Library</button>
+          <nav class="row top-nav" aria-label="Primary">
+            <button class="btn secondary" type="button" id="back-lib">Library (${count})</button>
+            <button class="btn secondary nav-current" type="button" aria-current="page">Scoreboard</button>
+          </nav>
         </header>
         <section class="panel">
           <div class="row" style="justify-content:space-between;margin-bottom:1rem">
