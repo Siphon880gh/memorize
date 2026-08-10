@@ -6,10 +6,18 @@ Client-side training app for memorizing scriptures, speeches, monologues, and ot
 
 ## Run (PHP — preferred)
 
-Requires PHP 8+. No `npm install`.
+Requires PHP 7.4+ (MAMP) or 8+. No `npm install`.
+
+**MAMP / Apache (this repo under `weng/app/sp/memorize`):**
+
+http://localhost:8888/weng/app/sp/memorize/
+
+(`index.php` at the project root; assets load from `public/assets/`. Legacy Vite `index.html` was renamed to `index.vite-legacy.html` so Apache serves PHP.)
+
+**Built-in PHP server:**
 
 ```bash
-cd /path/to/memorize-script
+cd /path/to/memorize
 php -S localhost:8080 -t public
 ```
 
