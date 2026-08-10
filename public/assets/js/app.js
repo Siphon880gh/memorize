@@ -154,6 +154,7 @@
       segmentNotes: p.segmentNotes && typeof p.segmentNotes === "object" ? p.segmentNotes : {},
       reductions: p.reductions && typeof p.reductions === "object" ? p.reductions : {},
       reductionMeta: p.reductionMeta,
+      reduceProficiency: typeof p.reduceProficiency === "string" ? p.reduceProficiency : void 0,
       visualAnchors: Array.isArray(p.visualAnchors) ? p.visualAnchors : [],
       stageProgress: p.stageProgress && typeof p.stageProgress === "object" ? p.stageProgress : {},
       attempts: Array.isArray(p.attempts) ? p.attempts : [],
@@ -669,7 +670,7 @@
     }
   }
   function buildReductionPrompt(purpose, passageTitle, passageText) {
-    const goal = purpose === "essential" ? "a simplified version containing only the essential memory words" : "key words only (memory anchors) while preserving original sequence and meaning";
+    const goal = purpose === "essential" ? "Essentials \u2014 condensed: tight essential anchors only (fewest words that still preserve sequence and meaning)" : "Essentials \u2014 expanded: a reduced cue that keeps short essential phrases (not the full original wording)";
     return [
       "You are helping me memorize a spoken passage.",
       `Passage title: ${passageTitle}`,
@@ -685,14 +686,28 @@
       passageText
     ].join("\n");
   }
+  /** Harder cues score higher when declared as Reduce proficiency. First letters = top. */
+  var REDUCE_PROFICIENCY = [
+    { id: "keywords", label: "Essentials \u2014 expanded", score: 0.35 },
+    { id: "essential", label: "Essentials \u2014 condensed", score: 0.5 },
+    { id: "first_words", label: "First words", score: 0.75 },
+    { id: "first_letters", label: "First letters", score: 1 },
+    { id: "none", label: "No hints", score: 0.9 }
+  ];
   var REDUCTION_LEVELS = [
     { id: "full", label: "Full text", needsPaste: false },
-    { id: "essential", label: "Essential words", needsPaste: true },
-    { id: "keywords", label: "Keywords only", needsPaste: true },
+    { id: "keywords", label: "Essentials \u2014 expanded", needsPaste: true },
+    { id: "essential", label: "Essentials \u2014 condensed", needsPaste: true },
     { id: "first_words", label: "First words", needsPaste: false },
     { id: "first_letters", label: "First letters", needsPaste: false },
     { id: "none", label: "No hints", needsPaste: false }
   ];
+  function reduceProficiencyScore(level) {
+    return REDUCE_PROFICIENCY.find((p) => p.id === level)?.score ?? 0;
+  }
+  function reduceProficiencyLabel(level) {
+    return REDUCE_PROFICIENCY.find((p) => p.id === level)?.label ?? REDUCTION_LEVELS.find((l) => l.id === level)?.label ?? level ?? "\u2014";
+  }
 
   // src/lib/segment.ts
   function segmentText(text) {
@@ -743,8 +758,12 @@
     const hintFactor = best === null ? 0 : 1 - Math.min(best, segmentCount) / segmentCount;
     const completedStages = STAGES.filter((s) => passage.stageProgress[s]?.completed).length;
     const stageFactor = completedStages / 7;
+    const reduceFactor = reduceProficiencyScore(passage.reduceProficiency);
     return Math.round(
-      Math.max(0, Math.min(100, zeroHintBonus * 40 + hintFactor * 40 + stageFactor * 20))
+      Math.max(
+        0,
+        Math.min(100, zeroHintBonus * 30 + hintFactor * 30 + stageFactor * 20 + reduceFactor * 20)
+      )
     );
   }
   function recordAttempt(passage, input) {
@@ -792,6 +811,7 @@
       stageProgress: {},
       attempts: [],
       stats: emptyStats(),
+      reduceProficiency: void 0,
       updatedAt: now
     };
     if (mode === "clear_content") {
@@ -1056,6 +1076,10 @@
       },
       updatedAt: now
     };
+    updated.stats = {
+      ...updated.stats,
+      memorizationPercent: computeMemorizationPercent(updated)
+    };
     savePassage(repo2, updated);
     return updated;
   }
@@ -1314,8 +1338,8 @@
       const cue = localReduction(level, passage.text, passage.reductions[level]);
       panel.innerHTML = `
       <h2>Recall</h2>
-      <p class="empty">Type the passage from memory. Checking is <strong>case-insensitive</strong> and <strong>lax about punctuation</strong> \u2014 but key words still need to be there. Revealing the original counts as a hint.</p>
-      <label>Cue level
+      <p class="empty">Type the passage from memory. Checking is <strong>case-insensitive</strong> and <strong>lax about punctuation</strong> \u2014 but key words still need to be there. Revealing the original counts as a hint; changing the cue dropdown does not.</p>
+      <label>Cue level (does not count as a hint)
         <select id="recall-level">
           ${REDUCTION_LEVELS.map((l) => `<option value="${l.id}" ${l.id === level ? "selected" : ""}>${l.label}</option>`).join("")}
         </select>
@@ -1402,10 +1426,12 @@
     const scoredAttempts = passage.attempts.filter((a) => a.stage === "reconstruct" || a.stage === "recall");
     panel.innerHTML = `
     <h2>Master</h2>
-    <p class="empty">Mastery means every stage is truly completed and you have a <strong>correct zero-hint</strong> Reconstruct or Recall win. Hints include <strong>hint buttons you click</strong> and <strong>revealing the full segment/original</strong> (including Full-segment cue on Reconstruct).</p>
+    <p class="empty">Mastery means every stage is truly completed and you have a <strong>correct zero-hint</strong> Reconstruct or Recall win. Hints include <strong>hint buttons you click</strong> and <strong>revealing the full segment/original</strong> (including Full-segment cue on Reconstruct). Changing cue format dropdowns on Reduce/Recall does not count as a hint.</p>
     <p class="stats-line">
       Zero-hint wins: <strong>${passage.stats.zeroHintCompletions}</strong>
       \xB7 Best hints on a win: <strong>${passage.stats.bestHintCount ?? "\u2014"}</strong>
+      \xB7 Mem %: <strong>${passage.stats.memorizationPercent}</strong>
+      \xB7 Reduce proficiency: <strong>${esc2(reduceProficiencyLabel(passage.reduceProficiency))}</strong>
       \xB7 <button type="button" class="linkish" id="hint-details">Details</button>
     </p>
     <ul class="segment-list">
@@ -1485,13 +1511,14 @@
       modal?.querySelector("#reset-cancel")?.addEventListener("click", () => modal.remove());
     });
   }
-  function openHelpModal(title, bodyHtml) {
+  function openHelpModal(title, bodyHtml, opts = {}) {
     document.getElementById("app-help-modal")?.remove();
     const backdrop = document.createElement("div");
     backdrop.id = "app-help-modal";
     backdrop.className = "modal-backdrop";
+    const modalClass = opts.media ? "modal modal-media" : "modal";
     backdrop.innerHTML = `
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+    <div class="${modalClass}" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
       <div class="modal-head">
         <h3 id="help-modal-title">${esc2(title)}</h3>
         <button type="button" class="btn secondary modal-close" aria-label="Close">Close</button>
@@ -1516,51 +1543,122 @@
     document.body.appendChild(backdrop);
     backdrop.querySelector(".modal-close")?.focus();
   }
+  function isHostLockedImageUrl(url) {
+    try {
+      const u = new URL(url);
+      const host = u.hostname.toLowerCase();
+      const path = u.pathname.toLowerCase();
+      const chatgptHost =
+        host === "chatgpt.com" ||
+        host.endsWith(".chatgpt.com") ||
+        host === "openai.com" ||
+        host.endsWith(".openai.com");
+      // Private ChatGPT file links need login; shared-thread image URLs can work.
+      return chatgptHost && (path.includes("/backend-api/") || path.includes("/estuary/"));
+    } catch {
+      return false;
+    }
+  }
+  function chatgptImageUrlHelpHtml() {
+    return `<p>ChatGPT private image links (for example <code>chatgpt.com/backend-api/\u2026</code>) need a login, so they will not preview here.</p>
+      <p>To get a URL that works:</p>
+      <ol>
+        <li>In ChatGPT, <strong>Share</strong> the thread</li>
+        <li>Open the <strong>shared</strong> thread link</li>
+        <li>Open the image in a <strong>new tab</strong></li>
+        <li>Copy that tab\u2019s URL and paste it here</li>
+      </ol>`;
+  }
+  function openImageModal(title, imageUrl) {
+    if (isHostLockedImageUrl(imageUrl)) {
+      openHelpModal(
+        title,
+        `${chatgptImageUrlHelpHtml()}
+         <p><a class="btn" href="${esc2(imageUrl)}" target="_blank" rel="noopener noreferrer">Open saved link</a></p>`
+      );
+      return;
+    }
+    openHelpModal(
+      title,
+      `<figure class="visual-modal-figure">
+        <img src="${esc2(imageUrl)}" alt="${esc2(title)}" referrerpolicy="no-referrer" />
+        <figcaption><a href="${esc2(imageUrl)}" target="_blank" rel="noopener noreferrer">Open in new tab</a></figcaption>
+      </figure>`,
+      { media: true }
+    );
+  }
   function renderVisualize(panel, repo2, passage, onChanged) {
     if (passage.segments.length === 0) {
       panel.innerHTML = `<h2>Visualize</h2><p class="empty">Add passage text first, then build visual anchors.</p>`;
       return;
     }
+    const noteFilled = (a) => Boolean(a?.userNote?.trim() || a?.imageUrl?.trim());
     const paint = () => {
       const saved = passage.segments.filter(
-        (s) => passage.visualAnchors.some(
-          (a) => a.segmentId === s.id && Boolean(a.imagePrompt.trim() || a.userNote?.trim() || a.imageUrl?.trim())
-        )
+        (s) => noteFilled(passage.visualAnchors.find((a) => a.segmentId === s.id))
       ).length;
       panel.innerHTML = `
       <h2>Visualize</h2>
-      <p class="empty">Optional: build a mental picture for any segment that helps. Copy a prompt into ChatGPT, generate an image if you want, then save a note or image URL. Leave segments blank if you like (${saved} saved).</p>
+      <p class="empty">Optional: build a mental picture for any segment that helps. Copy a prompt into ChatGPT, generate an image if you want, then <strong>Share the thread</strong>, open the shared thread, open the image in a new tab, and paste that URL here (private ChatGPT file links need login and will not preview). Saved anchors collapse \u2014 expand to update or reset (${saved} saved).</p>
       <div class="grid">
         ${passage.segments.map((seg) => {
         const anchor = passage.visualAnchors.find((a) => a.segmentId === seg.id);
         const concept = anchor?.concept || inferConcept(seg.text);
         const prompt = anchor?.imagePrompt || buildImagePrompt(seg, concept);
-        const has = Boolean(
-          anchor?.imagePrompt?.trim() || anchor?.userNote?.trim() || anchor?.imageUrl?.trim()
-        );
+        const noteOrUrl = anchor?.userNote || anchor?.imageUrl || "";
+        const imageUrl = anchor?.imageUrl?.trim() || (/^https?:\/\//i.test(noteOrUrl.trim()) ? noteOrUrl.trim() : "");
+        const hostLocked = Boolean(imageUrl && isHostLockedImageUrl(imageUrl));
+        const canEmbed = Boolean(imageUrl && !hostLocked);
+        const filled = noteFilled(anchor);
+        const notePreview = !imageUrl && noteOrUrl.trim() ? noteOrUrl.trim() : "";
+        const savedAt = filled ? anchor?.updatedAt : void 0;
+        const mediaClass = canEmbed ? "has-thumb" : hostLocked ? "has-link" : "";
         return `<article class="visual-card">
-              <h3>Segment ${seg.index + 1} ${has ? "\u2713" : ""}</h3>
-              <p>${esc2(seg.text)}</p>
-              <label>Visual concept
-                <input data-concept="${seg.id}" value="${esc2(concept)}" />
-              </label>
-              <label>Image prompt
-                <textarea data-prompt="${seg.id}" readonly>${esc2(prompt)}</textarea>
-              </label>
-              <div class="row prompt-actions">
-                <button class="btn secondary" type="button" data-copy="${seg.id}">Copy image prompt</button>
-                <a class="btn secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
-              </div>
-              <label>
-                <span class="label-row">
-                  <span class="label-text">Your note / image URL <span class="optional-tag">(optional)</span></span>
-                  <button type="button" class="help-icon" data-help-note="${seg.id}" aria-label="What goes in note or image URL?">?</button>
-                </span>
-                <input data-note="${seg.id}" placeholder="Short note or https://\u2026 image URL" value="${esc2(anchor?.userNote || anchor?.imageUrl || "")}" />
-              </label>
-              <div class="row">
-                <button class="btn" type="button" data-save="${seg.id}">Save anchor</button>
-              </div>
+              <h3 class="visual-card-label">Segment ${seg.index + 1} ${filled ? "\u2713" : ""}</h3>
+              <p class="visual-segment-text">${esc2(seg.text)}</p>
+              <details class="visual-help ${filled ? "is-ready" : "is-missing"}" ${filled ? "" : "open"}>
+                <summary class="visual-help-head ${mediaClass}">
+                  ${canEmbed ? `<button type="button" class="visual-thumb-btn" data-open-image="${seg.id}" aria-label="Open image preview">
+                    <img class="visual-thumb" src="${esc2(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-thumb-img="${seg.id}" />
+                  </button>` : hostLocked ? `<button type="button" class="visual-link-chip" data-open-image="${seg.id}">Why no preview?</button>` : ""}
+                  <span class="visual-help-title">
+                    <span class="visual-help-status">${filled ? "Visual anchor saved locally" : "Visual anchor (optional)"}</span>
+                    <span class="visual-help-hint">${filled ? hostLocked ? "Private ChatGPT link \u2014 Share the thread, open the shared image URL instead" : "Collapsed \u2014 expand to update or reset" : "Expand to add a note or image URL"}</span>
+                    ${notePreview ? `<span class="visual-note-snip">${esc2(notePreview.length > 72 ? `${notePreview.slice(0, 72)}\u2026` : notePreview)}</span>` : ""}
+                  </span>
+                  <span class="req-badge ${filled ? "ok" : "missing"}">${filled ? "Saved" : "Optional"}</span>
+                </summary>
+                <div class="visual-help-body">
+                  ${filled ? `<p class="empty visual-help-alt">This note/image stays with the passage until you reset it.${savedAt ? ` Last saved ${esc2(new Date(savedAt).toLocaleString())}.` : ""}</p>` : ""}
+                  <label>Visual concept
+                    <input data-concept="${seg.id}" value="${esc2(concept)}" />
+                  </label>
+                  <label>Image prompt
+                    <textarea data-prompt="${seg.id}" readonly>${esc2(prompt)}</textarea>
+                  </label>
+                  <div class="row prompt-actions">
+                    <button class="btn secondary" type="button" data-copy="${seg.id}">Copy image prompt</button>
+                    <a class="btn secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
+                  </div>
+                  <label>
+                    <span class="label-row">
+                      <span class="label-text">Your note / image URL <span class="optional-tag">(optional)</span></span>
+                      <button type="button" class="help-icon" data-help-note="${seg.id}" aria-label="What goes in note or image URL?">?</button>
+                    </span>
+                    <input data-note="${seg.id}" placeholder="Short note or https://\u2026 image URL" value="${esc2(noteOrUrl)}" />
+                  </label>
+                  ${canEmbed ? `<button type="button" class="visual-preview-btn" data-open-image="${seg.id}" aria-label="Open larger image preview">
+                    <img class="visual-preview-sm" src="${esc2(imageUrl)}" alt="Saved image for segment ${seg.index + 1}" loading="lazy" referrerpolicy="no-referrer" data-preview-img="${seg.id}" />
+                    <span>Click to enlarge</span>
+                  </button>` : hostLocked ? `<div class="visual-help-alt">${chatgptImageUrlHelpHtml()}
+                    <p><button type="button" class="linkish" data-open-image="${seg.id}">Open saved link</button></p>
+                  </div>` : ""}
+                  <div class="row">
+                    <button class="btn" type="button" data-save="${seg.id}">${filled ? "Update saved anchor" : "Save anchor"}</button>
+                    ${filled ? `<button class="btn danger" type="button" data-reset-anchor="${seg.id}">Reset saved note/image</button>` : ""}
+                  </div>
+                </div>
+              </details>
             </article>`;
       }).join("")}
       </div>
@@ -1574,6 +1672,11 @@
         if (!el) return;
         el.hidden = false;
         el.textContent = msg;
+      };
+      const imageUrlFor = (id) => {
+        const anchor = passage.visualAnchors.find((a) => a.segmentId === id);
+        const noteOrUrl = anchor?.userNote || anchor?.imageUrl || "";
+        return anchor?.imageUrl?.trim() || (/^https?:\/\//i.test(noteOrUrl.trim()) ? noteOrUrl.trim() : "");
       };
       panel.querySelectorAll("[data-copy]").forEach((btn) => {
         btn.addEventListener("click", async () => {
@@ -1590,17 +1693,31 @@
             `<p>This field is optional. Use it in either of these ways:</p>
            <ul>
              <li><strong>Note</strong> \u2014 a short reminder of the picture in your mind (for example, \u201Cfather on a high throne\u201D).</li>
-             <li><strong>Image URL</strong> \u2014 a link to the picture ChatGPT made.</li>
+             <li><strong>Image URL</strong> \u2014 a link to the picture (for an in-app thumbnail).</li>
            </ul>
-           <p>To get an image URL from ChatGPT:</p>
+           <p>After ChatGPT generates an image:</p>
            <ol>
-             <li>Open ChatGPT and paste the image prompt</li>
-             <li>Ask it to generate the image</li>
-             <li>Right-click the generated image \u2192 <strong>Copy image address</strong> (or Copy image link)</li>
-             <li>Paste that URL here, then click Save anchor</li>
-           </ol>`
+             <li><strong>Share</strong> the thread</li>
+             <li>Open the <strong>shared</strong> thread</li>
+             <li>Open the image in a <strong>new tab</strong></li>
+             <li>Copy that URL and paste it here, then Save anchor</li>
+           </ol>
+           <p>If you paste a private ChatGPT file link instead (<code>backend-api</code> / estuary), it will not preview here because that URL requires authentication.</p>`
           );
         });
+      });
+      panel.querySelectorAll("[data-open-image]").forEach((btn) => {
+        const open = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = btn.dataset.openImage;
+          const url = imageUrlFor(id);
+          if (!url) return;
+          const seg = passage.segments.find((s) => s.id === id);
+          openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url);
+        };
+        btn.addEventListener("mousedown", (e) => e.stopPropagation());
+        btn.addEventListener("click", open);
       });
       panel.querySelectorAll("[data-save]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -1609,14 +1726,19 @@
           if (!seg) return;
           const concept = panel.querySelector(`[data-concept="${id}"]`)?.value || inferConcept(seg.text);
           const prompt = panel.querySelector(`[data-prompt="${id}"]`)?.value || buildImagePrompt(seg, concept);
-          const note = panel.querySelector(`[data-note="${id}"]`)?.value || void 0;
+          const note = panel.querySelector(`[data-note="${id}"]`)?.value?.trim() || void 0;
+          if (!note) {
+            toast("Add a note or image URL before saving, or leave this segment blank.");
+            return;
+          }
           const now = (/* @__PURE__ */ new Date()).toISOString();
+          const imageUrl = /^https?:\/\//i.test(note) ? note : void 0;
           const anchor = {
             segmentId: id,
             concept,
             imagePrompt: prompt,
             userNote: note,
-            imageUrl: note?.startsWith("http") ? note : void 0,
+            imageUrl,
             updatedAt: now
           };
           const others = passage.visualAnchors.filter((a) => a.segmentId !== id);
@@ -1627,8 +1749,89 @@
           };
           savePassage(repo2, updated);
           Object.assign(passage, updated);
-          toast("Visual anchor saved.");
+          toast(
+            imageUrl && isHostLockedImageUrl(imageUrl)
+              ? "Saved, but that ChatGPT file link needs login \u2014 Share the thread and paste the shared image URL for a preview."
+              : "Visual anchor saved."
+          );
           onChanged(updated);
+        });
+      });
+      panel.querySelectorAll("[data-reset-anchor]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.resetAnchor;
+          const existing = passage.visualAnchors.find((a) => a.segmentId === id);
+          const now = (/* @__PURE__ */ new Date()).toISOString();
+          const others = passage.visualAnchors.filter((a) => a.segmentId !== id);
+          const nextAnchors = existing ? [
+            ...others,
+            {
+              ...existing,
+              userNote: void 0,
+              imageUrl: void 0,
+              updatedAt: now
+            }
+          ] : others;
+          const updated = {
+            ...passage,
+            visualAnchors: nextAnchors,
+            updatedAt: now
+          };
+          savePassage(repo2, updated);
+          Object.assign(passage, updated);
+          toast("Saved note/image reset.");
+          onChanged(updated);
+        });
+      });
+      panel.querySelectorAll("[data-thumb-img]").forEach((img) => {
+        img.addEventListener("error", () => {
+          const wrap = img.closest(".visual-thumb-btn");
+          const head = img.closest(".visual-help-head");
+          const id = wrap?.dataset.openImage || img.dataset.thumbImg;
+          const url = imageUrlFor(id);
+          if (!wrap || !head || !url) return;
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "visual-link-chip";
+          chip.dataset.openImage = id;
+          chip.textContent = "Open image link";
+          chip.addEventListener("mousedown", (e) => e.stopPropagation());
+          chip.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const seg = passage.segments.find((s) => s.id === id);
+            openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url);
+          });
+          wrap.replaceWith(chip);
+          head.classList.remove("has-thumb");
+          head.classList.add("has-link");
+          const hint = head.querySelector(".visual-help-hint");
+          if (hint) hint.textContent = "Preview blocked \u2014 Share the ChatGPT thread, then paste the shared image URL";
+        });
+      });
+      panel.querySelectorAll("[data-preview-img]").forEach((img) => {
+        img.addEventListener("error", () => {
+          const wrap = img.closest(".visual-preview-btn");
+          if (!wrap) return;
+          const id = wrap.dataset.openImage;
+          const url = imageUrlFor(id);
+          wrap.replaceWith(
+            Object.assign(document.createElement("p"), {
+              className: "empty visual-help-alt",
+              innerHTML: url ? `Preview could not load. <button type="button" class="linkish" data-open-image="${esc2(id)}">Open image link</button>` : "Preview could not load."
+            })
+          );
+          panel.querySelectorAll(`[data-open-image="${id}"]`).forEach((btn) => {
+            if (btn.dataset.boundOpen) return;
+            btn.dataset.boundOpen = "1";
+            btn.addEventListener("click", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!url) return;
+              const seg = passage.segments.find((s) => s.id === id);
+              openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url);
+            });
+          });
         });
       });
       panel.querySelectorAll("[data-concept]").forEach((input) => {
@@ -1658,16 +1861,17 @@
   }
   function renderReduce(panel, repo2, passage, onChanged) {
     let level = initialReduceLevel(passage);
+    let proficiency = passage.reduceProficiency && REDUCE_PROFICIENCY.some((p) => p.id === passage.reduceProficiency) ? passage.reduceProficiency : level === "full" ? "first_words" : level;
     let reveal = false;
-    const canComplete = () => {
-      if (level === "full") {
-        return { ok: false, reason: "Practice a reduced level (not Full text) before completing." };
+    const canComplete = (prof) => {
+      if (!prof || !REDUCE_PROFICIENCY.some((p) => p.id === prof)) {
+        return { ok: false, reason: "Choose the cue format you are proficient with (not Full text)." };
       }
-      const meta = REDUCTION_LEVELS.find((l) => l.id === level);
-      if (meta.needsPaste && !passage.reductions[level]?.trim()) {
+      const meta = REDUCTION_LEVELS.find((l) => l.id === prof);
+      if (meta?.needsPaste && !passage.reductions[prof]?.trim()) {
         return {
           ok: false,
-          reason: "Paste a ChatGPT reduction for this level (or switch to First words / First letters / No hints)."
+          reason: "Save a ChatGPT reduction for that proficiency level first (or pick First words / First letters / No hints)."
         };
       }
       return { ok: true, reason: "" };
@@ -1680,10 +1884,13 @@
       const pasteMissing = needsPaste && !pastedSaved;
       const pasteMode = level === "keywords" ? "keywords" : "essential";
       const savedAt = pastedSaved ? passage.reductionMeta?.updatedAt : void 0;
+      const profMeta = REDUCTION_LEVELS.find((l) => l.id === proficiency);
+      const profPasteMissing = Boolean(profMeta?.needsPaste && !passage.reductions[proficiency]?.trim());
       panel.innerHTML = `
       <h2>Reduce</h2>
-      <p class="empty">Practice whether you can <strong>recall the passage from different cue formats</strong> \u2014 from fuller wording down to keywords, first letters, or no hints. Speak or recite from the cue, then reveal the original to check yourself. Complete the stage after practicing a <strong>reduced</strong> (not Full text) level.</p>
-      <label>Cue format to practice from
+      <p class="empty">Practice recalling from different cue formats \u2014 from Essentials (expanded) down to Essentials (condensed), first letters, or no hints. Speak or recite from the cue, then reveal the original to check yourself. <strong>Changing this dropdown does not count as a hint.</strong> When you mark practiced, declare the hardest format you can reliably use \u2014 that choice feeds mastery points (First letters scores highest).</p>
+      <br/>
+      <label>Cue format to practice from (not a hint):
         <select id="level">
           ${REDUCTION_LEVELS.map((l) => {
         const hasSaved = l.needsPaste && Boolean(passage.reductions[l.id]?.trim());
@@ -1728,9 +1935,17 @@
         <pre class="cue-pre">${esc2(cue || "(no hints \u2014 recall from memory)")}</pre>
         ${reveal ? `<pre class="cue-pre original">${esc2(passage.text)}</pre>` : ""}
       </div>
+      <label class="reduce-proficiency">Cue format I am proficient with <span class="empty">(affects mastery points)</span>
+        <select id="reduce-proficiency">
+          ${REDUCE_PROFICIENCY.map((p) => {
+        const hasSaved = REDUCTION_LEVELS.find((l) => l.id === p.id)?.needsPaste && Boolean(passage.reductions[p.id]?.trim());
+        return `<option value="${p.id}" ${p.id === proficiency ? "selected" : ""}>${p.label}${hasSaved ? " \xB7 saved" : ""}</option>`;
+      }).join("")}
+        </select>
+      </label>
       <div class="row stage-next-row">
         <button class="btn secondary" type="button" id="toggle-reveal">${reveal ? "Hide original" : "Reveal original to check"}</button>
-        <button class="btn ${isComplete(passage, "reduce") ? "secondary" : "stage-next"}" type="button" id="mark-reduce" ${pasteMissing ? "disabled" : ""} title="${pasteMissing ? "Save a ChatGPT reduction first" : "Mark Reduce practiced"}">${isComplete(passage, "reduce") ? "Reduce completed" : "Mark Reduce practiced"}</button>
+        <button class="btn ${isComplete(passage, "reduce") ? "secondary" : "stage-next"}" type="button" id="mark-reduce" title="${profPasteMissing ? "Save a ChatGPT reduction for your proficiency level first" : "Mark Reduce practiced"}">${isComplete(passage, "reduce") ? "Update Reduce proficiency" : "Mark Reduce practiced"}</button>
         <span class="toast" id="reduce-toast" hidden></span>
       </div>
     `;
@@ -1747,25 +1962,36 @@
         reveal = false;
         paint();
       });
+      panel.querySelector("#reduce-proficiency")?.addEventListener("change", (e) => {
+        proficiency = e.target.value;
+        paint();
+      });
       panel.querySelector("#toggle-reveal")?.addEventListener("click", () => {
         reveal = !reveal;
         paint();
       });
       panel.querySelector("#mark-reduce")?.addEventListener("click", () => {
-        const gate = canComplete();
+        proficiency = panel.querySelector("#reduce-proficiency")?.value ?? proficiency;
+        const gate = canComplete(proficiency);
         if (!gate.ok) {
           toast(gate.reason, "warn");
-          const help = panel.querySelector("#chatgpt-help");
-          if (help) {
-            help.open = true;
-            help.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          const needsChat = REDUCTION_LEVELS.find((l) => l.id === proficiency)?.needsPaste;
+          if (needsChat) {
+            level = proficiency;
+            paint({ msg: gate.reason, kind: "warn" });
+            const help = panel.querySelector("#chatgpt-help");
+            if (help) {
+              help.open = true;
+              help.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+            panel.querySelector("#paste-reduction")?.classList.add("flash-missing");
           }
-          panel.querySelector("#paste-reduction")?.classList.add("flash-missing");
           return;
         }
-        const updated = markStage(repo2, passage, "reduce");
+        const withProf = { ...passage, reduceProficiency: proficiency };
+        const updated = markStage(repo2, withProf, "reduce");
         Object.assign(passage, updated);
-        toast("Reduce complete.");
+        toast(`Reduce complete \u2014 proficiency: ${reduceProficiencyLabel(proficiency)}.`);
         onChanged(updated);
       });
       panel.querySelector("#copy-prompt")?.addEventListener("click", async () => {
