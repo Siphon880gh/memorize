@@ -47,6 +47,7 @@ function normalizePassage(p) {
     segmentNotes: p.segmentNotes && typeof p.segmentNotes === "object" ? p.segmentNotes : {},
     reductions: p.reductions && typeof p.reductions === "object" ? p.reductions : {},
     reductionMeta: p.reductionMeta,
+    reduceProficiency: typeof p.reduceProficiency === "string" ? p.reduceProficiency : undefined,
     visualAnchors: Array.isArray(p.visualAnchors) ? p.visualAnchors : [],
     stageProgress: p.stageProgress && typeof p.stageProgress === "object" ? p.stageProgress : {},
     attempts: Array.isArray(p.attempts) ? p.attempts : [],
