@@ -6,10 +6,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const errors = [];
 const fail = (m) => errors.push(m);
 
-for (const p of ["src/ui/training.ts", "src/data/samplePsalm91.ts", "src/main.ts"]) {
+for (const p of ["public/assets/js/ui/training.js", "public/assets/js/data/samplePsalm91.js", "public/assets/js/app.js"]) {
   if (!existsSync(join(root, p))) fail(`missing ${p}`);
 }
-const training = readFileSync(join(root, "src/ui/training.ts"), "utf8");
+const training = readFileSync(join(root, "public/assets/js/ui/training.js"), "utf8");
 for (const stage of ["read", "understand", "reduce", "visualize", "reconstruct", "recall", "master"]) {
   if (!training.includes(`id: "${stage}"`) || !training.includes(`label: "${stage[0].toUpperCase()}${stage.slice(1)}"`) && stage !== "read") {
     // softer check: ready flags
@@ -20,7 +20,7 @@ for (const stage of ["read", "understand", "reduce", "visualize", "reconstruct",
 }
 if (!training.includes("renderRecall") || !training.includes("renderMaster")) fail("missing recall/master UI");
 
-const sample = readFileSync(join(root, "src/data/samplePsalm91.ts"), "utf8");
+const sample = readFileSync(join(root, "public/assets/js/data/samplePsalm91.js"), "utf8");
 if (!sample.includes("bibleGatewayUrl")) fail("sample missing bibleGatewayUrl");
 if (/He who dwells|Whoever dwells/.test(sample)) fail("sample appears to embed copyrighted NIV body");
 if (!/text:\s*""/.test(sample)) fail("sample text must be empty string");

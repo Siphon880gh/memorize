@@ -8,14 +8,14 @@ const errors = [];
 const fail = (m) => errors.push(m);
 
 for (const p of [
-  "src/lib/segment.ts",
-  "src/lib/segment.test.ts",
-  "src/ui/training.ts",
+  "public/assets/js/lib/segment.js",
+  "tests/js/lib.test.js",
+  "public/assets/js/ui/training.js",
 ]) {
   if (!existsSync(join(root, p))) fail(`missing ${p}`);
 }
 
-const training = readFileSync(join(root, "src/ui/training.ts"), "utf8");
+const training = readFileSync(join(root, "public/assets/js/ui/training.js"), "utf8");
 for (const token of ["read", "understand", "segmentNotes"]) {
   if (!training.includes(token)) fail(`training.ts missing ${token}`);
 }

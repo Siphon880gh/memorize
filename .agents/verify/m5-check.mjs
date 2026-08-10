@@ -7,12 +7,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const errors = [];
 const fail = (m) => errors.push(m);
 
-for (const p of ["src/lib/stats.ts", "src/lib/stats.test.ts", "src/lib/ordering.ts", "src/ui/training.ts"]) {
+for (const p of ["public/assets/js/lib/stats.js", "tests/js/lib.test.js", "public/assets/js/lib/ordering.js", "public/assets/js/ui/training.js"]) {
   if (!existsSync(join(root, p))) fail(`missing ${p}`);
 }
-const ordering = readFileSync(join(root, "src/lib/ordering.ts"), "utf8");
+const ordering = readFileSync(join(root, "public/assets/js/lib/ordering.js"), "utf8");
 if (!ordering.includes("applyHint")) fail("missing applyHint");
-const training = readFileSync(join(root, "src/ui/training.ts"), "utf8");
+const training = readFileSync(join(root, "public/assets/js/ui/training.js"), "utf8");
 if (!training.includes("Bring the hint count down to 0")) {
   fail("missing zero-hint goal messaging");
 }

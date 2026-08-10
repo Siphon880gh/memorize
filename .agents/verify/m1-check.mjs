@@ -8,14 +8,12 @@ const errors = [];
 const fail = (m) => errors.push(m);
 
 for (const p of [
-  "package.json",
-  "vite.config.ts",
-  "index.html",
-  "src/main.ts",
-  "src/storage/repository.ts",
-  "src/ui/library.ts",
-  "src/storage/repository.test.ts",
-  "dist/index.html",
+  "public/index.php",
+  "public/assets/js/app.js",
+  "public/assets/app.css",
+  "public/assets/js/storage/repository.js",
+  "public/assets/js/ui/library.js",
+  "tests/js/repository.test.js",
 ]) {
   if (!existsSync(join(root, p))) fail(`missing ${p}`);
 }
@@ -30,17 +28,17 @@ function walk(dir, acc = []) {
   return acc;
 }
 
-const srcFiles = walk(join(root, "src")).filter((f) => f.endsWith(".ts") || f.endsWith(".js"));
+const jsFiles = walk(join(root, "public")).filter((f) => f.endsWith(".js"));
 const banned = [/from ['"]openai['"]/, /api\.openai\.com/, /@anthropic-ai/, /from ['"]anthropic['"]/];
-for (const file of srcFiles) {
+for (const file of jsFiles) {
   const body = readFileSync(file, "utf8");
   for (const re of banned) {
     if (re.test(body)) fail(`banned LLM client pattern in ${file}: ${re}`);
   }
 }
 
-const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-if (!pkg.scripts?.test || !pkg.scripts?.build) fail("package.json missing test/build scripts");
+const shell = readFileSync(join(root, "public/index.php"), "utf8");
+if (!shell.includes("assets/js/app.js")) fail("public/index.php must load app.js");
 
 if (errors.length) {
   console.error("M1 VERIFY FAIL");
