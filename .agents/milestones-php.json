@@ -1,0 +1,279 @@
+{
+  "version": 1,
+  "track": "php_conversion",
+  "last_updated_iso": "2026-08-10T13:48:00Z",
+  "notes": [
+    "Convert Memorize Script from Vite/TypeScript to plain PHP + vanilla JS for zero-npm local runs.",
+    "Keep product behavior: localStorage persistence, copy/paste ChatGPT prompts, no LLM API, no backend accounts.",
+    "Canonical run: php -S localhost:8080 -t public",
+    "Error-fix budget for AGENTS_LOOP-Convert-PHP.md is 5 rounds.",
+    "TS MVP (M0–M10) remains historical; PHP track IDs are P0–P10."
+  ],
+  "implementation_order": [
+    "P0",
+    "P1",
+    "P2",
+    "P3",
+    "P4",
+    "P5",
+    "P6",
+    "P7",
+    "P8",
+    "P9",
+    "P10"
+  ],
+  "php_milestone_ids": [
+    "P0",
+    "P1",
+    "P2",
+    "P3",
+    "P4",
+    "P5",
+    "P6",
+    "P7",
+    "P8",
+    "P9",
+    "P10"
+  ],
+  "milestones": [
+    {
+      "id": "P0",
+      "epic_ids": ["E-PHP0"],
+      "name": "Freeze PHP conversion decisions",
+      "goal": "Lock PHP stack, folder layout, and parity checklist so conversion does not thrash.",
+      "deliverables": [
+        "Decisions in .agents/state.json under php_conversion",
+        "docs/PHP_CONVERSION.md with layout + run command + feature parity list",
+        ".agents/verify/p0-check.mjs (or .php) PASS"
+      ],
+      "acceptance": [
+        "stack = PHP built-in server + vanilla JS (no Vite/npm required to run)",
+        "public/ is the web root; assets under public/assets/",
+        "localStorage key memorize-script.v1 retained",
+        "Parity list covers library, all 7 stages, scoreboard, share, starters, export/import"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p0-check.mjs"]
+      },
+      "depends_on": [],
+      "out_of_scope": ["Porting UI code"]
+    },
+    {
+      "id": "P1",
+      "epic_ids": ["E-PHP1"],
+      "name": "PHP shell + CSS + run path",
+      "goal": "App opens via php -S with branded shell and empty mount point.",
+      "deliverables": [
+        "public/index.php",
+        "public/assets/app.css (ported styles)",
+        "README run section for PHP",
+        ".agents/verify/p1-check.mjs"
+      ],
+      "acceptance": [
+        "php -S can serve public/index.php (smoke via php -l + file checks)",
+        "index.php includes CSS and a #app root",
+        "No npm required to view the shell"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p1-check.mjs"]
+      },
+      "depends_on": ["P0"]
+    },
+    {
+      "id": "P2",
+      "epic_ids": ["E-PHP1"],
+      "name": "Port types + localStorage repository to JS",
+      "goal": "Vanilla JS repository mirrors TS storage contracts with tests.",
+      "deliverables": [
+        "public/assets/js/types.js",
+        "public/assets/js/repository.js",
+        "tests/php or tests/js repository tests runnable without Vite (node --test or php)",
+        ".agents/verify/p2-check.mjs"
+      ],
+      "acceptance": [
+        "Create/list/update/delete round-trip tested",
+        "schemaVersion 1 + STORAGE_KEY memorize-script.v1",
+        "No TypeScript build step for these modules"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p2-check.mjs"]
+      },
+      "depends_on": ["P1"]
+    },
+    {
+      "id": "P3",
+      "epic_ids": ["E-PHP2"],
+      "name": "Port library UI + starters + backup entry points",
+      "goal": "Library create/edit/delete, Psalm 91 + Daily Bread starters, scoreboard/export/import buttons wired.",
+      "deliverables": [
+        "public/assets/js/ui/library.js",
+        "public/assets/js/data/starters.js",
+        "Wire from public/assets/js/app.js",
+        ".agents/verify/p3-check.mjs"
+      ],
+      "acceptance": [
+        "Library module exists and references Daily Bread + Psalm 91",
+        "Export/import helpers referenced",
+        "php -l clean on index.php"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p3-check.mjs"]
+      },
+      "depends_on": ["P2"]
+    },
+    {
+      "id": "P4",
+      "epic_ids": ["E-PHP2"],
+      "name": "Port segment + Read / Understand",
+      "goal": "Training shell with Read and Understand stages in JS.",
+      "deliverables": [
+        "public/assets/js/lib/segment.js",
+        "public/assets/js/ui/training.js (read/understand)",
+        "tests for segmenter",
+        ".agents/verify/p4-check.mjs"
+      ],
+      "acceptance": [
+        "Segmenter tests PASS",
+        "Training exposes read + understand"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p4-check.mjs"]
+      },
+      "depends_on": ["P3"]
+    },
+    {
+      "id": "P5",
+      "epic_ids": ["E-PHP3"],
+      "name": "Port Reduce + ChatGPT paste prompts",
+      "goal": "Reduction levels + copy/paste prompts without LLM API.",
+      "deliverables": [
+        "public/assets/js/lib/reduction.js",
+        "Reduce stage in training.js",
+        "tests + p5-check"
+      ],
+      "acceptance": [
+        "Local reducers tested",
+        "Prompt builder includes sequence rule",
+        "No openai client strings in public/"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p5-check.mjs"]
+      },
+      "depends_on": ["P4"]
+    },
+    {
+      "id": "P6",
+      "epic_ids": ["E-PHP3"],
+      "name": "Port Reconstruct + hints + stats",
+      "goal": "Ordering drill with DnD/keyboard, progressive hints, attempt stats.",
+      "deliverables": [
+        "public/assets/js/lib/ordering.js",
+        "public/assets/js/lib/stats.js",
+        "Reconstruct stage UI",
+        "tests + p6-check"
+      ],
+      "acceptance": [
+        "gradeOrder/applyHint/recordAttempt tested",
+        "UI copy includes Bring the hint count down to 0"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p6-check.mjs"]
+      },
+      "depends_on": ["P5"]
+    },
+    {
+      "id": "P7",
+      "epic_ids": ["E-PHP4"],
+      "name": "Port Visualize + Scoreboard + Share",
+      "goal": "Visual anchors, personal scoreboard, reference-safe sharing.",
+      "deliverables": [
+        "visualPrompt.js, scoreboard.js, share.js + UIs",
+        "tests + p7-check"
+      ],
+      "acceptance": [
+        "Bible share omits body by default (tested)",
+        "Scoreboard + visualize modules present"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p7-check.mjs"]
+      },
+      "depends_on": ["P6"]
+    },
+    {
+      "id": "P8",
+      "epic_ids": ["E-PHP4"],
+      "name": "Port Recall + Master + hash routing",
+      "goal": "Full seven-stage path with hash routes and mastery gate.",
+      "deliverables": [
+        "Recall + Master stages",
+        "Hash routing in app.js (#passage/:id/:stage, #scoreboard, #share/...)",
+        "p8-check"
+      ],
+      "acceptance": [
+        "All seven stages ready:true in training nav",
+        "Share decode prefill path exists",
+        "Daily Bread starter ships KJV text; Psalm 91 ships empty text"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p8-check.mjs"]
+      },
+      "depends_on": ["P7"]
+    },
+    {
+      "id": "P9",
+      "epic_ids": ["E-PHP5"],
+      "name": "Port backup + PHP verify suite + README",
+      "goal": "Export/import works; npm run verify equivalent via php/node checks; README is PHP-first.",
+      "deliverables": [
+        "backup.js",
+        ".agents/verify/p9-check.mjs",
+        "scripts/verify-php.sh or npm-free node .agents/verify/run-php.mjs",
+        "README.md PHP-first"
+      ],
+      "acceptance": [
+        "Import rejects garbage JSON (tested)",
+        "README documents php -S localhost:8080 -t public",
+        "run-php verify executes P0–P9 checks"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/p9-check.mjs"]
+      },
+      "depends_on": ["P8"]
+    },
+    {
+      "id": "P10",
+      "epic_ids": ["E-PHP5"],
+      "name": "Make PHP canonical; retire Vite run path",
+      "goal": "PHP is the documented default; TS/Vite clearly archived or removed from run instructions; agent docs point at PHP loop.",
+      "deliverables": [
+        "AGENTS.md updated for PHP track",
+        "EPIC_MAP.php section or EPIC_MAP.md PHP epics marked done",
+        "package.json scripts optional/legacy only — not required to run app",
+        "Move or mark src/ as legacy (LEGACY_TS.md)",
+        ".agents/verify/p10-check.mjs + full run-php PASS",
+        "state.php_conversion.status = complete"
+      ],
+      "acceptance": [
+        "README primary run is PHP only",
+        "LEGACY_TS.md exists noting Vite tree is not required",
+        "php_milestone_ids all completed in state",
+        "node .agents/verify/run-php.mjs PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": ["node .agents/verify/run-php.mjs"]
+      },
+      "depends_on": ["P9"]
+    }
+  ]
+}

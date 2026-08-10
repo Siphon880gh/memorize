@@ -24,7 +24,7 @@
     "M10.done"
   ],
   "decisions": {
-    "stack": "Vite + TypeScript + vanilla DOM",
+    "stack": "PHP built-in server + vanilla JS (TS MVP archived via P-track)",
     "storage_key": "memorize-script.v1",
     "schema_version": 1,
     "ai_policy": "copy_paste_prompts_only_mvp",
@@ -102,6 +102,34 @@
     "M3 PASS — advancing to M4.",
     "M4+M5 PASS — advancing to M6.",
     "M6-M8 PASS — advancing to M9.",
-    "M9+M10 PASS — MVP drained. Later M11/M12 await human request."
-  ]
+    "M9+M10 PASS — MVP drained. Later M11/M12 await human request.",
+    "PHP conversion track opened — AGENTS_LOOP-Convert-PHP.md"
+  ],
+  "php_conversion": {
+    "status": "loop_running",
+    "paused": false,
+    "current_milestone_id": "P0",
+    "completed": [],
+    "last_updated_iso": "2026-08-10T13:50:05.024Z",
+    "decisions": {
+      "stack": "PHP built-in server + vanilla JS ES modules",
+      "web_root": "public",
+      "run_command": "php -S localhost:8080 -t public",
+      "storage_key": "memorize-script.v1",
+      "schema_version": 1,
+      "no_npm_to_run": true,
+      "no_llm_api": true,
+      "keep_product_parity": true,
+      "error_fix_budget_rounds": 5,
+      "loop_file": "AGENTS_LOOP-Convert-PHP.md",
+      "milestones_file": ".agents/milestones-php.json"
+    },
+    "loop": {
+      "tick": 0,
+      "error_round": 0,
+      "last_verify": null,
+      "failed_milestone_id": null,
+      "handoff_file": null
+    }
+  }
 }
