@@ -1,9 +1,17 @@
 import {
+  applyHint,
+  gradeOrder,
+  moveItem,
+  shuffleItems,
+  toOrderItems,
+} from "../lib/ordering";
+import {
   REDUCTION_LEVELS,
   buildReductionPrompt,
   localReduction,
 } from "../lib/reduction";
 import { ensureSegments } from "../lib/segment";
+import { recordAttempt } from "../lib/stats";
 import { PassageRepository } from "../storage/repository";
 import type { Passage, ReductionLevel, TrainingStage } from "../types";
 
@@ -16,7 +24,7 @@ const STAGES: { id: TrainingStage; label: string; ready: boolean }[] = [
   { id: "understand", label: "Understand", ready: true },
   { id: "reduce", label: "Reduce", ready: true },
   { id: "visualize", label: "Visualize", ready: false },
-  { id: "reconstruct", label: "Reconstruct", ready: false },
+  { id: "reconstruct", label: "Reconstruct", ready: true },
   { id: "recall", label: "Recall", ready: false },
   { id: "master", label: "Master", ready: false },
 ];
@@ -73,6 +81,7 @@ export function renderTraining(
     });
   else if (stage === "understand") renderUnderstand(panel, repo, passage);
   else if (stage === "reduce") renderReduce(panel, repo, passage);
+  else if (stage === "reconstruct") renderReconstruct(panel, repo, passage);
   else {
     panel.innerHTML = `<h2>${stage}</h2><p class="empty">This stage arrives in a later milestone.</p>`;
   }
@@ -176,6 +185,157 @@ function renderUnderstand(
       toast.textContent = "Notes saved.";
     }
   });
+}
+
+function savePassage(repo: PassageRepository, passage: Passage): void {
+  const doc = repo.load();
+  doc.passages = doc.passages.map((p) => (p.id === passage.id ? passage : p));
+  repo.save(doc);
+}
+
+function renderReconstruct(
+  panel: HTMLElement,
+  repo: PassageRepository,
+  passage: Passage,
+): void {
+  const correct = toOrderItems(passage.segments);
+  const correctIds = correct.map((c) => c.id);
+  let order = shuffleItems(correct);
+  let selected = 0;
+  let hintsUsed = 0;
+  let checked: boolean[] | null = null;
+  let message = "Bring the hint count down to 0.";
+  const startedAt = Date.now();
+
+  const paint = () => {
+    panel.innerHTML = `
+      <h2>Reconstruct</h2>
+      <p class="empty"><strong>Bring the hint count down to 0.</strong> Drag segments, or use keyboard: ↑/↓ move, Enter select.</p>
+      <p class="stats-line">Hints this attempt: <strong id="hint-count">${hintsUsed}</strong> · Best: <strong>${passage.stats.bestHintCount ?? "—"}</strong> · Zero-hint wins: <strong>${passage.stats.zeroHintCompletions}</strong></p>
+      <ul class="order-list" id="order-list">
+        ${order
+          .map((item, i) => {
+            const cls = [
+              selected === i ? "selected" : "",
+              checked ? (checked[i] ? "correct" : "wrong") : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+            return `<li class="order-item ${cls}" draggable="true" tabindex="0" data-index="${i}" data-id="${item.id}">
+              <span class="seg-idx">${i + 1}</span>
+              <span>${esc(item.text)}</span>
+            </li>`;
+          })
+          .join("")}
+      </ul>
+      <div class="row">
+        <button class="btn" type="button" id="check-order">Check order</button>
+        <button class="btn secondary" type="button" id="hint-btn">Hint (next phrase)</button>
+        <button class="btn secondary" type="button" id="reshuffle">Reshuffle</button>
+        <button class="btn secondary" type="button" id="reset-order">Reset attempt</button>
+      </div>
+      <p class="toast" id="order-toast">${esc(message)}</p>
+    `;
+
+    const list = panel.querySelector("#order-list");
+    let dragFrom: number | null = null;
+
+    list?.querySelectorAll<HTMLElement>(".order-item").forEach((el) => {
+      el.addEventListener("dragstart", () => {
+        dragFrom = Number(el.dataset.index);
+      });
+      el.addEventListener("dragover", (e) => e.preventDefault());
+      el.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const to = Number(el.dataset.index);
+        if (dragFrom === null || Number.isNaN(to)) return;
+        order = moveItem(order, dragFrom, to);
+        checked = null;
+        selected = to;
+        paint();
+      });
+      el.addEventListener("click", () => {
+        selected = Number(el.dataset.index);
+        paint();
+      });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          order = moveItem(order, selected, Math.max(0, selected - 1));
+          selected = Math.max(0, selected - 1);
+          checked = null;
+          paint();
+        } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          order = moveItem(order, selected, Math.min(order.length - 1, selected + 1));
+          selected = Math.min(order.length - 1, selected + 1);
+          checked = null;
+          paint();
+        }
+      });
+    });
+
+    panel.querySelector("#check-order")?.addEventListener("click", () => {
+      const grade = gradeOrder(
+        order.map((o) => o.id),
+        correctIds,
+      );
+      checked = grade.correctPositions;
+      if (grade.allCorrect) {
+        const updated = recordAttempt(passage, {
+          stage: "reconstruct",
+          hintsUsed,
+          durationMs: Date.now() - startedAt,
+          success: true,
+        });
+        updated.stageProgress = {
+          ...updated.stageProgress,
+          reconstruct: { completed: true, updatedAt: new Date().toISOString() },
+        };
+        savePassage(repo, updated);
+        Object.assign(passage, updated);
+        message = hintsUsed === 0 ? "Perfect — zero hints!" : `Correct with ${hintsUsed} hint(s). Aim for 0 next time.`;
+      } else {
+        message = "Not yet — correct phrases are highlighted.";
+      }
+      paint();
+    });
+
+    panel.querySelector("#hint-btn")?.addEventListener("click", () => {
+      const result = applyHint(
+        order.map((o) => o.id),
+        correctIds,
+      );
+      if (result.hintedIndex === -1) {
+        message = "Nothing left to hint.";
+        paint();
+        return;
+      }
+      hintsUsed += 1;
+      order = result.ids.map((id) => correct.find((c) => c.id === id)!);
+      checked = null;
+      selected = result.hintedIndex;
+      message = `Hint placed phrase #${result.hintedIndex + 1}. Bring the hint count down to 0.`;
+      paint();
+    });
+
+    panel.querySelector("#reshuffle")?.addEventListener("click", () => {
+      order = shuffleItems(correct);
+      checked = null;
+      message = "Reshuffled. Bring the hint count down to 0.";
+      paint();
+    });
+
+    panel.querySelector("#reset-order")?.addEventListener("click", () => {
+      order = shuffleItems(correct);
+      hintsUsed = 0;
+      checked = null;
+      message = "Attempt reset. Bring the hint count down to 0.";
+      paint();
+    });
+  };
+
+  paint();
 }
 
 function renderReduce(panel: HTMLElement, repo: PassageRepository, passage: Passage): void {
