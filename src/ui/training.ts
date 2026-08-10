@@ -5,6 +5,7 @@ import {
   shuffleItems,
   toOrderItems,
 } from "../lib/ordering";
+import { gradeRecall } from "../lib/recallGrade";
 import {
   REDUCTION_LEVELS,
   buildReductionPrompt,
@@ -21,15 +22,32 @@ export type TrainingCallbacks = {
   onBack: () => void;
 };
 
-const STAGES: { id: TrainingStage; label: string; ready: boolean }[] = [
-  { id: "read", label: "Read", ready: true },
-  { id: "understand", label: "Understand", ready: true },
-  { id: "reduce", label: "Reduce", ready: true },
-  { id: "visualize", label: "Visualize", ready: true },
-  { id: "reconstruct", label: "Reconstruct", ready: true },
-  { id: "recall", label: "Recall", ready: true },
-  { id: "master", label: "Master", ready: true },
+const STAGE_ORDER: TrainingStage[] = [
+  "read",
+  "understand",
+  "reduce",
+  "visualize",
+  "reconstruct",
+  "recall",
+  "master",
 ];
+
+function isComplete(passage: Passage, stage: TrainingStage): boolean {
+  return Boolean(passage.stageProgress[stage]?.completed);
+}
+
+function isUnlocked(passage: Passage, stage: TrainingStage): boolean {
+  if (stage === "read") return true;
+  const idx = STAGE_ORDER.indexOf(stage);
+  if (idx <= 0) return true;
+  return isComplete(passage, STAGE_ORDER[idx - 1]!);
+}
+
+function nextStage(stage: TrainingStage): TrainingStage | null {
+  const idx = STAGE_ORDER.indexOf(stage);
+  if (idx < 0 || idx >= STAGE_ORDER.length - 1) return null;
+  return STAGE_ORDER[idx + 1]!;
+}
 
 export function renderTraining(
   root: HTMLElement,
@@ -45,6 +63,9 @@ export function renderTraining(
   }
 
   passage = syncSegments(repo, passage);
+  const libraryCount = repo.listPassages().length;
+
+  const activeStage = isUnlocked(passage, stage) ? stage : "read";
 
   root.innerHTML = `
     <div class="app-shell">
@@ -53,18 +74,43 @@ export function renderTraining(
           <h1 class="brand">Memorize <span>Script</span></h1>
           <p class="tagline">${esc(passage.title)}${passage.bibleReference ? ` · ${esc(passage.bibleReference)}` : ""}</p>
         </div>
-        <button class="btn secondary" type="button" id="back-lib">Library</button>
+        <nav class="row top-nav" aria-label="Primary">
+          <button class="btn secondary" type="button" id="back-lib">Library (${libraryCount})</button>
+        </nav>
       </header>
       <div id="share-host"></div>
       <nav class="stage-nav panel" aria-label="Training stages">
-        ${STAGES.map(
-          (s) =>
-            `<button type="button" class="stage-pill ${s.id === stage ? "active" : ""} ${s.ready ? "" : "soon"}" data-stage="${s.id}" ${s.ready ? "" : "disabled"}>${s.label}</button>`,
-        ).join("")}
+        ${STAGE_ORDER.map((s) => {
+          const done = isComplete(passage, s);
+          const unlocked = isUnlocked(passage, s);
+          const classes = [
+            "stage-pill",
+            s === activeStage ? "active" : "",
+            done ? "done" : "",
+            unlocked ? "" : "locked",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const label = `${done ? "✓ " : ""}${s[0]!.toUpperCase()}${s.slice(1)}`;
+          return `<button type="button" class="${classes}" data-stage="${s}" ${unlocked ? "" : "disabled"} title="${unlocked ? s : "Complete the previous stage first"}">${label}</button>`;
+        }).join("")}
       </nav>
+      <p class="toast" id="stage-toast" hidden></p>
       <section class="panel" id="stage-panel"></section>
     </div>
   `;
+
+  const go = (next: TrainingStage) => {
+    history.replaceState(null, "", `#passage/${passageId}/${next}`);
+    renderTraining(root, repo, passageId, callbacks, next);
+  };
+
+  const toast = (msg: string) => {
+    const el = root.querySelector<HTMLElement>("#stage-toast");
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = msg;
+  };
 
   root.querySelector("#back-lib")?.addEventListener("click", callbacks.onBack);
   const shareHost = root.querySelector<HTMLElement>("#share-host");
@@ -72,26 +118,88 @@ export function renderTraining(
   root.querySelectorAll<HTMLButtonElement>("[data-stage]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const next = btn.dataset.stage as TrainingStage;
-      history.replaceState(null, "", `#passage/${passageId}/${next}`);
-      renderTraining(root, repo, passageId, callbacks, next);
+      if (!isUnlocked(passage, next)) {
+        toast("Complete the previous stage first.");
+        return;
+      }
+      go(next);
     });
   });
 
   const panel = root.querySelector<HTMLElement>("#stage-panel");
   if (!panel) return;
-  if (stage === "read")
+
+  const continueRow = (from: TrainingStage, label: string) => {
+    const n = nextStage(from);
+    if (!n) return "";
+    return `<div class="row" style="margin-top:1rem">
+      <button class="btn" type="button" id="continue-next">${esc(label)}</button>
+    </div>`;
+  };
+
+  const bindContinue = (from: TrainingStage) => {
+    panel.querySelector("#continue-next")?.addEventListener("click", () => {
+      const n = nextStage(from);
+      if (n) go(n);
+    });
+  };
+
+  if (activeStage === "read") {
     renderRead(panel, repo, passage, () => {
-      history.replaceState(null, "", `#passage/${passageId}/understand`);
+      const updated = markStage(repo, passage, "read");
+      Object.assign(passage, updated);
+      go("understand");
+    });
+  } else if (activeStage === "understand") {
+    renderUnderstand(panel, repo, passage, (updated) => {
+      Object.assign(passage, updated);
+      go("understand");
+      // re-render to show continue
       renderTraining(root, repo, passageId, callbacks, "understand");
     });
-  else if (stage === "understand") renderUnderstand(panel, repo, passage);
-  else if (stage === "reduce") renderReduce(panel, repo, passage);
-  else if (stage === "visualize") renderVisualize(panel, repo, passage);
-  else if (stage === "reconstruct") renderReconstruct(panel, repo, passage);
-  else if (stage === "recall") renderRecall(panel, repo, passage);
-  else if (stage === "master") renderMaster(panel, repo, passage);
-  else {
-    panel.innerHTML = `<h2>${stage}</h2><p class="empty">Unknown stage.</p>`;
+    if (isComplete(passage, "understand")) {
+      panel.insertAdjacentHTML(
+        "beforeend",
+        continueRow("understand", "Continue → Reduce"),
+      );
+      bindContinue("understand");
+    }
+  } else if (activeStage === "reduce") {
+    renderReduce(panel, repo, passage, (updated) => {
+      Object.assign(passage, updated);
+      renderTraining(root, repo, passageId, callbacks, "reduce");
+    });
+    if (isComplete(passage, "reduce")) {
+      panel.insertAdjacentHTML(
+        "beforeend",
+        continueRow("reduce", "Continue → Visualize"),
+      );
+      bindContinue("reduce");
+    }
+  } else if (activeStage === "visualize") {
+    renderVisualize(panel, repo, passage, (updated) => {
+      Object.assign(passage, updated);
+      renderTraining(root, repo, passageId, callbacks, "visualize");
+    });
+    if (isComplete(passage, "visualize")) {
+      panel.insertAdjacentHTML(
+        "beforeend",
+        continueRow("visualize", "Continue → Reconstruct"),
+      );
+      bindContinue("visualize");
+    }
+  } else if (activeStage === "reconstruct") {
+    renderReconstruct(panel, repo, passage, (updated) => {
+      Object.assign(passage, updated);
+      renderTraining(root, repo, passageId, callbacks, "reconstruct");
+    });
+  } else if (activeStage === "recall") {
+    renderRecall(panel, repo, passage, (updated) => {
+      Object.assign(passage, updated);
+      renderTraining(root, repo, passageId, callbacks, "recall");
+    });
+  } else if (activeStage === "master") {
+    renderMaster(panel, repo, passage);
   }
 }
 
@@ -119,30 +227,40 @@ function markStage(repo: PassageRepository, passage: Passage, stage: TrainingSta
     },
     updatedAt: now,
   };
-  const doc = repo.load();
-  doc.passages = doc.passages.map((p) => (p.id === updated.id ? updated : p));
-  repo.save(doc);
+  savePassage(repo, updated);
   return updated;
+}
+
+function savePassage(repo: PassageRepository, passage: Passage): void {
+  const doc = repo.load();
+  doc.passages = doc.passages.map((p) => (p.id === passage.id ? passage : p));
+  repo.save(doc);
 }
 
 function renderRead(
   panel: HTMLElement,
-  repo: PassageRepository,
+  _repo: PassageRepository,
   passage: Passage,
   onContinue: () => void,
 ): void {
+  const empty = passage.segments.length === 0 || !passage.text.trim();
   panel.innerHTML = `
     <h2>Read</h2>
-    <p class="empty">Read the full passage with segment markers. Absorb cadence before reducing.</p>
-    <ol class="segment-list">
-      ${passage.segments.map((s) => `<li><span class="seg-idx">${s.index + 1}</span> ${esc(s.text)}</li>`).join("")}
-    </ol>
-    <div class="row">
-      <button class="btn" type="button" id="mark-read">Mark Read complete → Understand</button>
-    </div>
+    ${
+      empty
+        ? `<p class="empty">This passage has no text yet. Go to <strong>Library</strong>, edit it, and paste the wording you want to memorize.</p>
+           <div class="row"><button class="btn" type="button" id="mark-read" disabled>Mark Read complete → Understand</button></div>`
+        : `<p class="empty">Read the full passage with segment markers. Absorb cadence before reducing.</p>
+           <ol class="segment-list">
+             ${passage.segments.map((s) => `<li><span class="seg-idx">${s.index + 1}</span> ${esc(s.text)}</li>`).join("")}
+           </ol>
+           <div class="row">
+             <button class="btn" type="button" id="mark-read">Mark Read complete → Understand</button>
+           </div>`
+    }
   `;
   panel.querySelector("#mark-read")?.addEventListener("click", () => {
-    markStage(repo, passage, "read");
+    if (empty) return;
     onContinue();
   });
 }
@@ -151,21 +269,26 @@ function renderUnderstand(
   panel: HTMLElement,
   repo: PassageRepository,
   passage: Passage,
+  onSaved: (p: Passage) => void,
 ): void {
+  if (passage.segments.length === 0) {
+    panel.innerHTML = `<h2>Understand</h2><p class="empty">Add passage text first (Library → Edit), then return here.</p>`;
+    return;
+  }
   panel.innerHTML = `
     <h2>Understand</h2>
-    <p class="empty">Capture meaning per segment. Notes stay on this device.</p>
+    <p class="empty">Optional: jot a meaning, emotion, or cue for any segment that helps you. Leave the rest blank if you like.</p>
     <div class="grid" id="notes">
       ${passage.segments
         .map(
           (s) => `<label>Segment ${s.index + 1}: ${esc(s.text)}
-            <textarea data-note="${s.id}" placeholder="Meaning, emotion, or cue">${esc(passage.segmentNotes[s.id] ?? "")}</textarea>
+            <textarea data-note="${s.id}" placeholder="Meaning, emotion, or cue (optional)">${esc(passage.segmentNotes[s.id] ?? "")}</textarea>
           </label>`,
         )
         .join("")}
     </div>
     <div class="row" style="margin-top:1rem">
-      <button class="btn" type="button" id="save-notes">Save notes</button>
+      <button class="btn" type="button" id="save-notes">Save &amp; complete Understand</button>
       <span class="toast" id="notes-toast" hidden></span>
     </div>
   `;
@@ -184,28 +307,26 @@ function renderUnderstand(
       },
       updatedAt: now,
     };
-    const doc = repo.load();
-    doc.passages = doc.passages.map((p) => (p.id === updated.id ? updated : p));
-    repo.save(doc);
+    savePassage(repo, updated);
     const toast = panel.querySelector<HTMLElement>("#notes-toast");
     if (toast) {
       toast.hidden = false;
-      toast.textContent = "Notes saved.";
+      toast.textContent = "Understand complete.";
     }
+    onSaved(updated);
   });
-}
-
-function savePassage(repo: PassageRepository, passage: Passage): void {
-  const doc = repo.load();
-  doc.passages = doc.passages.map((p) => (p.id === passage.id ? passage : p));
-  repo.save(doc);
 }
 
 function renderReconstruct(
   panel: HTMLElement,
   repo: PassageRepository,
   passage: Passage,
+  onDone: (p: Passage) => void,
 ): void {
+  if (passage.segments.length < 2) {
+    panel.innerHTML = `<h2>Reconstruct</h2><p class="empty">Need at least two segments to practice ordering. Add more text in Library → Edit.</p>`;
+    return;
+  }
   const correct = toOrderItems(passage.segments);
   const correctIds = correct.map((c) => c.id);
   let order = shuffleItems(correct);
@@ -218,7 +339,7 @@ function renderReconstruct(
   const paint = () => {
     panel.innerHTML = `
       <h2>Reconstruct</h2>
-      <p class="empty"><strong>Bring the hint count down to 0.</strong> Drag segments, or use keyboard: ↑/↓ move, Enter select.</p>
+      <p class="empty"><strong>Bring the hint count down to 0.</strong> Drag segments, or use keyboard: ↑/↓ move.</p>
       <p class="stats-line">Hints this attempt: <strong id="hint-count">${hintsUsed}</strong> · Best: <strong>${passage.stats.bestHintCount ?? "—"}</strong> · Zero-hint wins: <strong>${passage.stats.zeroHintCompletions}</strong></p>
       <ul class="order-list" id="order-list">
         ${order
@@ -243,12 +364,15 @@ function renderReconstruct(
         <button class="btn secondary" type="button" id="reset-order">Reset attempt</button>
       </div>
       <p class="toast" id="order-toast">${esc(message)}</p>
+      ${
+        isComplete(passage, "reconstruct")
+          ? `<div class="row" style="margin-top:1rem"><button class="btn" type="button" id="continue-recall">Continue → Recall</button></div>`
+          : ""
+      }
     `;
 
-    const list = panel.querySelector("#order-list");
     let dragFrom: number | null = null;
-
-    list?.querySelectorAll<HTMLElement>(".order-item").forEach((el) => {
+    panel.querySelectorAll<HTMLElement>(".order-item").forEach((el) => {
       el.addEventListener("dragstart", () => {
         dragFrom = Number(el.dataset.index);
       });
@@ -290,22 +414,29 @@ function renderReconstruct(
       );
       checked = grade.correctPositions;
       if (grade.allCorrect) {
-        const updated = recordAttempt(passage, {
+        let updated = recordAttempt(passage, {
           stage: "reconstruct",
           hintsUsed,
           durationMs: Date.now() - startedAt,
           success: true,
         });
-        updated.stageProgress = {
-          ...updated.stageProgress,
-          reconstruct: { completed: true, updatedAt: new Date().toISOString() },
+        updated = {
+          ...updated,
+          stageProgress: {
+            ...updated.stageProgress,
+            reconstruct: { completed: true, updatedAt: new Date().toISOString() },
+          },
         };
         savePassage(repo, updated);
         Object.assign(passage, updated);
-        message = hintsUsed === 0 ? "Perfect — zero hints!" : `Correct with ${hintsUsed} hint(s). Aim for 0 next time.`;
-      } else {
-        message = "Not yet — correct phrases are highlighted.";
+        message =
+          hintsUsed === 0
+            ? "Perfect — zero hints!"
+            : `Correct with ${hintsUsed} hint(s). Aim for 0 next time.`;
+        onDone(updated);
+        return;
       }
+      message = "Not yet — correct phrases are highlighted.";
       paint();
     });
 
@@ -341,12 +472,22 @@ function renderReconstruct(
       message = "Attempt reset. Bring the hint count down to 0.";
       paint();
     });
+
+    panel.querySelector("#continue-recall")?.addEventListener("click", () => {
+      history.replaceState(null, "", `#passage/${passage.id}/recall`);
+      window.dispatchEvent(new Event("hashchange"));
+    });
   };
 
   paint();
 }
 
-function renderRecall(panel: HTMLElement, repo: PassageRepository, passage: Passage): void {
+function renderRecall(
+  panel: HTMLElement,
+  repo: PassageRepository,
+  passage: Passage,
+  onDone: (p: Passage) => void,
+): void {
   let level: ReductionLevel = "none";
   let reveal = false;
   const startedAt = Date.now();
@@ -356,7 +497,7 @@ function renderRecall(panel: HTMLElement, repo: PassageRepository, passage: Pass
     const cue = localReduction(level, passage.text, passage.reductions[level]);
     panel.innerHTML = `
       <h2>Recall</h2>
-      <p class="empty">Speak or write from memory. Use fading cues only if needed — goal is still zero hints.</p>
+      <p class="empty">Type the passage from memory. Your answer is checked against the original — close isn’t enough if key words are missing.</p>
       <label>Cue level
         <select id="recall-level">
           ${REDUCTION_LEVELS.map((l) => `<option value="${l.id}" ${l.id === level ? "selected" : ""}>${l.label}</option>`).join("")}
@@ -369,9 +510,14 @@ function renderRecall(panel: HTMLElement, repo: PassageRepository, passage: Pass
       ${reveal ? `<pre class="cue-pre original">${esc(passage.text)}</pre>` : ""}
       <div class="row">
         <button class="btn secondary" type="button" id="recall-reveal">${reveal ? "Hide original" : "Reveal original (counts as hint)"}</button>
-        <button class="btn" type="button" id="recall-done">Mark recall attempt</button>
+        <button class="btn" type="button" id="recall-done">Check recall</button>
       </div>
       <p class="toast" id="recall-toast" hidden></p>
+      ${
+        isComplete(passage, "recall")
+          ? `<div class="row" style="margin-top:1rem"><button class="btn" type="button" id="continue-master">Continue → Master</button></div>`
+          : ""
+      }
     `;
     panel.querySelector("#recall-level")?.addEventListener("change", (e) => {
       level = (e.target as HTMLSelectElement).value as ReductionLevel;
@@ -383,52 +529,62 @@ function renderRecall(panel: HTMLElement, repo: PassageRepository, passage: Pass
       paint();
     });
     panel.querySelector("#recall-done")?.addEventListener("click", () => {
-      const text = panel.querySelector<HTMLTextAreaElement>("#recall-text")?.value.trim() ?? "";
-      const success = text.length > 0;
-      const updated = recordAttempt(passage, {
+      const text = panel.querySelector<HTMLTextAreaElement>("#recall-text")?.value ?? "";
+      const grade = gradeRecall(passage.text, text);
+      const toast = panel.querySelector<HTMLElement>("#recall-toast");
+      if (grade.empty) {
+        if (toast) {
+          toast.hidden = false;
+          toast.textContent = "Type your recall before checking.";
+        }
+        return;
+      }
+      let updated = recordAttempt(passage, {
         stage: "recall",
         hintsUsed,
         durationMs: Date.now() - startedAt,
-        success,
+        success: grade.ok,
       });
-      updated.stageProgress = {
-        ...updated.stageProgress,
-        recall: { completed: success, updatedAt: new Date().toISOString() },
-      };
+      if (grade.ok) {
+        updated = {
+          ...updated,
+          stageProgress: {
+            ...updated.stageProgress,
+            recall: { completed: true, updatedAt: new Date().toISOString() },
+          },
+        };
+      }
       savePassage(repo, updated);
       Object.assign(passage, updated);
-      const toast = panel.querySelector<HTMLElement>("#recall-toast");
       if (toast) {
         toast.hidden = false;
-        toast.textContent = success
-          ? `Attempt saved (${hintsUsed} hint(s)). Bring the hint count down to 0.`
-          : "Type a recall before marking complete.";
+        toast.textContent = grade.ok
+          ? `Correct (${Math.round(grade.similarity * 100)}% match, ${hintsUsed} hint(s)).`
+          : `Not yet (${Math.round(grade.similarity * 100)}% match). Keep the wording closer to the original.`;
       }
+      if (grade.ok) onDone(updated);
+    });
+    panel.querySelector("#continue-master")?.addEventListener("click", () => {
+      history.replaceState(null, "", `#passage/${passage.id}/master`);
+      location.hash = `#passage/${passage.id}/master`;
+      window.dispatchEvent(new Event("hashchange"));
     });
   };
   paint();
 }
 
 function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Passage): void {
-  const stages: TrainingStage[] = [
-    "read",
-    "understand",
-    "reduce",
-    "visualize",
-    "reconstruct",
-    "recall",
-    "master",
-  ];
-  const checklist = stages.map((s) => ({
+  const checklist = STAGE_ORDER.map((s) => ({
     id: s,
-    done: Boolean(passage.stageProgress[s]?.completed) || (s === "master" && Boolean(passage.masteredAt)),
+    done: isComplete(passage, s) || (s === "master" && Boolean(passage.masteredAt)),
   }));
   const zeroHint = passage.stats.zeroHintCompletions > 0;
-  const ready = checklist.filter((c) => c.id !== "master").every((c) => c.done) && zeroHint;
+  const ready =
+    checklist.filter((c) => c.id !== "master").every((c) => c.done) && zeroHint;
 
   panel.innerHTML = `
     <h2>Master</h2>
-    <p class="empty">Mastery means the full path is practiced and you have a zero-hint reconstruct/recall win.</p>
+    <p class="empty">Mastery means every stage is truly completed and you have a <strong>correct</strong> zero-hint reconstruct or recall win.</p>
     <ul class="segment-list">
       ${checklist
         .map(
@@ -436,11 +592,11 @@ function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Pass
             `<li><span class="seg-idx">${c.done ? "✓" : "·"}</span> ${c.id}${c.id === "master" ? " (this gate)" : ""}</li>`,
         )
         .join("")}
-      <li><span class="seg-idx">${zeroHint ? "✓" : "·"}</span> At least one zero-hint completion</li>
+      <li><span class="seg-idx">${zeroHint ? "✓" : "·"}</span> At least one correct zero-hint completion</li>
     </ul>
     <div class="row">
       <button class="btn" type="button" id="mark-master" ${ready ? "" : "disabled"}>Mark mastered</button>
-      <span class="toast" id="master-toast">${ready ? "Ready to mark mastery." : "Complete earlier stages and earn a zero-hint win first."}</span>
+      <span class="toast" id="master-toast">${ready ? "Ready to mark mastery." : "Finish locked stages and earn a correct zero-hint win first."}</span>
     </div>
   `;
 
@@ -467,23 +623,72 @@ function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Pass
   });
 }
 
+
+function openHelpModal(title: string, bodyHtml: string): void {
+  document.getElementById("app-help-modal")?.remove();
+  const backdrop = document.createElement("div");
+  backdrop.id = "app-help-modal";
+  backdrop.className = "modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+      <div class="modal-head">
+        <h3 id="help-modal-title">${esc(title)}</h3>
+        <button type="button" class="btn secondary modal-close" aria-label="Close">Close</button>
+      </div>
+      <div class="modal-body">${bodyHtml}</div>
+    </div>
+  `;
+  const close = () => backdrop.remove();
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) close();
+  });
+  backdrop.querySelector(".modal-close")?.addEventListener("click", close);
+  document.addEventListener(
+    "keydown",
+    function onKey(ev: KeyboardEvent) {
+      if (ev.key === "Escape") {
+        close();
+        document.removeEventListener("keydown", onKey);
+      }
+    },
+  );
+  document.body.appendChild(backdrop);
+  (backdrop.querySelector(".modal-close") as HTMLButtonElement | null)?.focus();
+}
+
 function renderVisualize(
   panel: HTMLElement,
   repo: PassageRepository,
   passage: Passage,
+  onChanged: (p: Passage) => void,
 ): void {
+  if (passage.segments.length === 0) {
+    panel.innerHTML = `<h2>Visualize</h2><p class="empty">Add passage text first, then build visual anchors.</p>`;
+    return;
+  }
+
   const paint = () => {
+    const saved = passage.segments.filter((s) =>
+      passage.visualAnchors.some(
+        (a) =>
+          a.segmentId === s.id &&
+          Boolean(a.imagePrompt.trim() || a.userNote?.trim() || a.imageUrl?.trim()),
+      ),
+    ).length;
     panel.innerHTML = `
       <h2>Visualize</h2>
-      <p class="empty">Build a storyboard of mental anchors. Copy each image prompt into ChatGPT image generation, then store your association here.</p>
+      <p class="empty">Optional: build a mental picture for any segment that helps. Copy a prompt into ChatGPT, generate an image if you want, then save a note or image URL. Leave segments blank if you like (${saved} saved).</p>
       <div class="grid">
         ${passage.segments
           .map((seg) => {
             const anchor = passage.visualAnchors.find((a) => a.segmentId === seg.id);
             const concept = anchor?.concept || inferConcept(seg.text);
             const prompt = anchor?.imagePrompt || buildImagePrompt(seg, concept);
+            const has = Boolean(
+              anchor?.imagePrompt?.trim() || anchor?.userNote?.trim() || anchor?.imageUrl?.trim(),
+            );
             return `<article class="visual-card">
-              <h3>Segment ${seg.index + 1}</h3>
+              <h3>Segment ${seg.index + 1} ${has ? "✓" : ""}</h3>
               <p>${esc(seg.text)}</p>
               <label>Visual concept
                 <input data-concept="${seg.id}" value="${esc(concept)}" />
@@ -491,18 +696,27 @@ function renderVisualize(
               <label>Image prompt
                 <textarea data-prompt="${seg.id}" readonly>${esc(prompt)}</textarea>
               </label>
-              <label>Your note / image URL (optional)
-                <input data-note="${seg.id}" value="${esc(anchor?.userNote || anchor?.imageUrl || "")}" />
+              <div class="row prompt-actions">
+                <button class="btn secondary" type="button" data-copy="${seg.id}">Copy image prompt</button>
+                <a class="btn" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
+              </div>
+              <label>
+                <span class="label-row">Your note / image URL <span class="optional-tag">(optional)</span>
+                  <button type="button" class="help-icon" data-help-note="${seg.id}" aria-label="What goes in note or image URL?">?</button>
+                </span>
+                <input data-note="${seg.id}" placeholder="Short note or https://… image URL" value="${esc(anchor?.userNote || anchor?.imageUrl || "")}" />
               </label>
               <div class="row">
-                <button class="btn secondary" type="button" data-copy="${seg.id}">Copy image prompt</button>
                 <button class="btn" type="button" data-save="${seg.id}">Save anchor</button>
               </div>
             </article>`;
           })
           .join("")}
       </div>
-      <p class="toast" id="viz-toast" hidden></p>
+      <div class="row" style="margin-top:1rem">
+        <button class="btn" type="button" id="mark-visualize">Mark Visualize complete</button>
+        <span class="toast" id="viz-toast" hidden></span>
+      </div>
     `;
 
     const toast = (msg: string) => {
@@ -517,7 +731,27 @@ function renderVisualize(
         const id = btn.dataset.copy!;
         const text = panel.querySelector<HTMLTextAreaElement>(`[data-prompt="${id}"]`)?.value ?? "";
         await navigator.clipboard.writeText(text);
-        toast("Image prompt copied.");
+        toast("Image prompt copied — open ChatGPT and paste it.");
+      });
+    });
+
+    panel.querySelectorAll<HTMLButtonElement>("[data-help-note]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        openHelpModal(
+          "Your note / image URL",
+          `<p>This field is optional. Use it in either of these ways:</p>
+           <ul>
+             <li><strong>Note</strong> — a short reminder of the picture in your mind (for example, “father on a high throne”).</li>
+             <li><strong>Image URL</strong> — a link to the picture ChatGPT made.</li>
+           </ul>
+           <p>To get an image URL from ChatGPT:</p>
+           <ol>
+             <li>Open ChatGPT and paste the image prompt</li>
+             <li>Ask it to generate the image</li>
+             <li>Right-click the generated image → <strong>Copy image address</strong> (or Copy image link)</li>
+             <li>Paste that URL here, then click Save anchor</li>
+           </ol>`,
+        );
       });
     });
 
@@ -529,7 +763,9 @@ function renderVisualize(
         const concept =
           panel.querySelector<HTMLInputElement>(`[data-concept="${id}"]`)?.value ||
           inferConcept(seg.text);
-        const prompt = buildImagePrompt(seg, concept);
+        const prompt =
+          panel.querySelector<HTMLTextAreaElement>(`[data-prompt="${id}"]`)?.value ||
+          buildImagePrompt(seg, concept);
         const note =
           panel.querySelector<HTMLInputElement>(`[data-note="${id}"]`)?.value || undefined;
         const now = new Date().toISOString();
@@ -545,16 +781,12 @@ function renderVisualize(
         const updated: Passage = {
           ...passage,
           visualAnchors: [...others, anchor],
-          stageProgress: {
-            ...passage.stageProgress,
-            visualize: { completed: true, updatedAt: now },
-          },
           updatedAt: now,
         };
         savePassage(repo, updated);
         Object.assign(passage, updated);
         toast("Visual anchor saved.");
-        paint();
+        onChanged(updated);
       });
     });
 
@@ -567,26 +799,87 @@ function renderVisualize(
         if (area) area.value = buildImagePrompt(seg, input.value);
       });
     });
+
+    panel.querySelector("#mark-visualize")?.addEventListener("click", () => {
+      const updated = markStage(repo, passage, "visualize");
+      Object.assign(passage, updated);
+      toast("Visualize complete.");
+      onChanged(updated);
+    });
   };
 
   paint();
 }
 
-function renderReduce(panel: HTMLElement, repo: PassageRepository, passage: Passage): void {
-  let level: ReductionLevel = "full";
+function renderReduce(
+  panel: HTMLElement,
+  repo: PassageRepository,
+  passage: Passage,
+  onChanged: (p: Passage) => void,
+): void {
+  let level: ReductionLevel = "first_words";
   let reveal = false;
+
+  const canComplete = (): { ok: boolean; reason: string } => {
+    if (level === "full") {
+      return { ok: false, reason: "Practice a reduced level (not Full text) before completing." };
+    }
+    const meta = REDUCTION_LEVELS.find((l) => l.id === level)!;
+    if (meta.needsPaste && !passage.reductions[level]?.trim()) {
+      return {
+        ok: false,
+        reason: "Paste a ChatGPT reduction for this level (or switch to First words / First letters / No hints).",
+      };
+    }
+    return { ok: true, reason: "" };
+  };
 
   const paint = () => {
     const cue = localReduction(level, passage.text, passage.reductions[level]);
     const meta = REDUCTION_LEVELS.find((l) => l.id === level)!;
+    const pastedSaved = Boolean(passage.reductions[level]?.trim());
+    const needsPaste = meta.needsPaste;
+    const pasteMissing = needsPaste && !pastedSaved;
+    const pasteMode = level === "keywords" ? "keywords" : "essential";
+
     panel.innerHTML = `
       <h2>Reduce</h2>
-      <p class="empty">Practice from fuller cues down to none. For essential/keyword levels, copy a ChatGPT prompt, then paste the result back.</p>
+      <p class="empty">Practice from fuller cues down to none. Complete the stage only after using a <strong>reduced</strong> cue level.</p>
       <label>Cue level
         <select id="level">
           ${REDUCTION_LEVELS.map((l) => `<option value="${l.id}" ${l.id === level ? "selected" : ""}>${l.label}</option>`).join("")}
         </select>
       </label>
+      ${
+        needsPaste
+          ? `<section class="reduce-help ${pasteMissing ? "is-missing" : "is-ready"}" id="chatgpt-help" aria-live="polite">
+              <div class="reduce-help-head">
+                <strong>${pasteMissing ? "ChatGPT reduction required" : "ChatGPT reduction saved"}</strong>
+                <span class="req-badge ${pasteMissing ? "missing" : "ok"}">${pasteMissing ? "Missing" : "Ready"}</span>
+              </div>
+              <ol class="reduce-steps">
+                <li>Copy the prompt below</li>
+                <li>Open <a class="chatgpt-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT</a>, paste it, and generate</li>
+                <li>Copy ChatGPT’s answer into the required field, then save</li>
+              </ol>
+              <p class="empty reduce-help-alt">Or switch cue level to <strong>First words</strong>, <strong>First letters</strong>, or <strong>No hints</strong> (no ChatGPT needed).</p>
+              <label>1. ChatGPT prompt
+                <textarea id="ai-prompt" readonly>${esc(buildReductionPrompt(pasteMode, passage.title, passage.text))}</textarea>
+              </label>
+              <div class="row">
+                <button class="btn secondary" type="button" id="copy-prompt">Copy prompt</button>
+                <a class="btn" id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
+              </div>
+              <label class="${pasteMissing ? "field-missing" : "field-ready"}">
+                <span class="label-row">2. Paste ChatGPT reduction <span class="req-badge ${pasteMissing ? "missing" : "ok"}">${pasteMissing ? "Required — missing" : "Saved"}</span></span>
+                <textarea id="paste-reduction" ${pasteMissing ? 'aria-invalid="true" aria-required="true"' : ""} placeholder="Paste ChatGPT’s reduced text here…">${esc(passage.reductions[level] ?? "")}</textarea>
+              </label>
+              <div class="row">
+                <button class="btn" type="button" id="save-reduction">Save pasted reduction</button>
+              </div>
+            </section>`
+          : ""
+      }
       <div class="cue-box panel" style="margin-top:1rem;box-shadow:none">
         <p><strong>Cues</strong></p>
         <pre class="cue-pre">${esc(cue || "(no hints — recall from memory)")}</pre>
@@ -594,28 +887,18 @@ function renderReduce(panel: HTMLElement, repo: PassageRepository, passage: Pass
       </div>
       <div class="row" style="margin-top:1rem">
         <button class="btn secondary" type="button" id="toggle-reveal">${reveal ? "Hide original" : "Reveal original"}</button>
-        <button class="btn" type="button" id="mark-reduce">Mark Reduce practiced</button>
+        <button class="btn" type="button" id="mark-reduce" ${pasteMissing ? "disabled" : ""} title="${pasteMissing ? "Save a ChatGPT reduction first" : "Mark Reduce practiced"}">Mark Reduce practiced</button>
+        <span class="toast" id="reduce-toast" hidden></span>
       </div>
-      ${
-        meta.needsPaste
-          ? `<div class="grid" style="margin-top:1.25rem">
-              <label>ChatGPT prompt
-                <textarea id="ai-prompt" readonly>${esc(buildReductionPrompt(level === "keywords" ? "keywords" : "essential", passage.title, passage.text))}</textarea>
-              </label>
-              <div class="row">
-                <button class="btn secondary" type="button" id="copy-prompt">Copy prompt</button>
-              </div>
-              <label>Paste ChatGPT reduction
-                <textarea id="paste-reduction">${esc(passage.reductions[level] ?? "")}</textarea>
-              </label>
-              <div class="row">
-                <button class="btn" type="button" id="save-reduction">Save pasted reduction</button>
-                <span class="toast" id="reduce-toast" hidden></span>
-              </div>
-            </div>`
-          : ""
-      }
     `;
+
+    const toast = (msg: string, kind: "ok" | "warn" = "ok") => {
+      const el = panel.querySelector<HTMLElement>("#reduce-toast");
+      if (!el) return;
+      el.hidden = false;
+      el.classList.toggle("warn", kind === "warn");
+      el.textContent = msg;
+    };
 
     panel.querySelector("#level")?.addEventListener("change", (e) => {
       level = (e.target as HTMLSelectElement).value as ReductionLevel;
@@ -627,51 +910,41 @@ function renderReduce(panel: HTMLElement, repo: PassageRepository, passage: Pass
       paint();
     });
     panel.querySelector("#mark-reduce")?.addEventListener("click", () => {
-      markStage(repo, passage, "reduce");
-      const toast = panel.querySelector<HTMLElement>("#reduce-toast");
-      if (toast) {
-        toast.hidden = false;
-        toast.textContent = "Reduce marked complete.";
-      } else {
-        const row = panel.querySelector(".row");
-        const span = document.createElement("span");
-        span.className = "toast";
-        span.textContent = "Reduce marked complete.";
-        row?.appendChild(span);
+      const gate = canComplete();
+      if (!gate.ok) {
+        toast(gate.reason, "warn");
+        panel.querySelector("#chatgpt-help")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        panel.querySelector("#paste-reduction")?.classList.add("flash-missing");
+        return;
       }
+      const updated = markStage(repo, passage, "reduce");
+      Object.assign(passage, updated);
+      toast("Reduce complete.");
+      onChanged(updated);
     });
     panel.querySelector("#copy-prompt")?.addEventListener("click", async () => {
       const text = panel.querySelector<HTMLTextAreaElement>("#ai-prompt")?.value ?? "";
       await navigator.clipboard.writeText(text);
-      const toast = panel.querySelector<HTMLElement>("#reduce-toast");
-      if (toast) {
-        toast.hidden = false;
-        toast.textContent = "Prompt copied.";
-      }
+      toast("Prompt copied — open ChatGPT and paste it.");
     });
     panel.querySelector("#save-reduction")?.addEventListener("click", () => {
       const pasted = panel.querySelector<HTMLTextAreaElement>("#paste-reduction")?.value ?? "";
+      if (!pasted.trim()) {
+        toast("Paste ChatGPT’s reduced text into the required field.", "warn");
+        panel.querySelector<HTMLTextAreaElement>("#paste-reduction")?.focus();
+        return;
+      }
       const now = new Date().toISOString();
-      const prompt = buildReductionPrompt(
-        level === "keywords" ? "keywords" : "essential",
-        passage.title,
-        passage.text,
-      );
+      const prompt = buildReductionPrompt(pasteMode, passage.title, passage.text);
       const updated: Passage = {
         ...passage,
         reductions: { ...passage.reductions, [level]: pasted },
         reductionMeta: { promptUsed: prompt, updatedAt: now },
         updatedAt: now,
       };
-      const doc = repo.load();
-      doc.passages = doc.passages.map((p) => (p.id === updated.id ? updated : p));
-      repo.save(doc);
-      passage = updated;
-      const toast = panel.querySelector<HTMLElement>("#reduce-toast");
-      if (toast) {
-        toast.hidden = false;
-        toast.textContent = "Reduction saved locally.";
-      }
+      savePassage(repo, updated);
+      Object.assign(passage, updated);
+      toast("Reduction saved — you can practice and mark Reduce complete.");
       paint();
     });
   };

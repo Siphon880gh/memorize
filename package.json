@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && esbuild src/main.ts --bundle --format=iife --outfile=public/assets/js/app.js --legal-comments=none && cp src/styles.css public/assets/app.css && rm -f public/assets/js/app.css",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

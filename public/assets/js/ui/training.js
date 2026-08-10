@@ -31,6 +31,7 @@ function renderTraining(root, repo, passageId, callbacks, stage = "read") {
     return;
   }
   passage = syncSegments(repo, passage);
+  const libraryCount = repo.listPassages().length;
   root.innerHTML = `
     <div class="app-shell">
       <header class="topbar">
@@ -38,7 +39,9 @@ function renderTraining(root, repo, passageId, callbacks, stage = "read") {
           <h1 class="brand">Memorize <span>Script</span></h1>
           <p class="tagline">${esc(passage.title)}${passage.bibleReference ? ` \xB7 ${esc(passage.bibleReference)}` : ""}</p>
         </div>
-        <button class="btn secondary" type="button" id="back-lib">Library</button>
+        <nav class="row top-nav" aria-label="Primary">
+          <button class="btn secondary" type="button" id="back-lib">Library (${libraryCount})</button>
+        </nav>
       </header>
       <div id="share-host"></div>
       <nav class="stage-nav panel" aria-label="Training stages">
