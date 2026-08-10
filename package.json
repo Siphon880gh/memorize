@@ -3,18 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "PHP + vanilla JS app. No npm install required. Kept only for verify script pointers.",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && esbuild src/main.ts --bundle --format=iife --outfile=public/assets/js/app.js --legal-comments=none && cp src/styles.css public/assets/app.css && rm -f public/assets/js/app.css",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "verify": "node .agents/verify/run-all.mjs"
-  },
-  "devDependencies": {
-    "jsdom": "^26.1.0",
-    "typescript": "~5.8.3",
-    "vite": "^6.3.5",
-    "vitest": "^3.2.4"
+    "verify": "node .agents/verify/run-php.mjs",
+    "verify:legacy-mvp": "node .agents/verify/run-all.mjs"
   }
 }

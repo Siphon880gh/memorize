@@ -10,27 +10,25 @@ Run with PHP only — no `npm install` / Vite required for daily use.
 |-------|--------|
 | Server | PHP built-in: `php -S localhost:8080 -t public` |
 | Shell | `public/index.php` |
-| UI logic | Vanilla ES modules under `public/assets/js/` |
+| UI logic | Vanilla JS: `public/assets/js/app.js` (+ `tour.js`) |
 | Styles | `public/assets/app.css` |
 | Persistence | Browser `localStorage` key `memorize-script.v1` (unchanged) |
 | AI | Copy/paste prompts only |
-| Legacy | Vite/TS tree under `src/` until P10 marks it legacy |
+| Legacy | Former Vite/TS `src/` removed (`LEGACY_TS.md`; still in git history) |
 
 ## Layout
 
 ```
+index.php                 # Apache/MAMP entry → public/index.php
 public/
   index.php
   assets/
     app.css
     js/
-      app.js
-      repository.js
-      types.js
-      data/starters.js
-      lib/...
-      ui/...
-tests/js/          # node --test (verify only; not needed to run app)
+      app.js              # canonical UI (what the browser loads)
+      tour.js
+      lib/ … types.js …   # small helpers used by node --test verify
+tests/js/                 # node --test (verify only; not needed to run app)
 .agents/milestones-php.json
 AGENTS_LOOP-Convert-PHP.md
 ```

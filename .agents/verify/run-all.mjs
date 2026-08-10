@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,10 +12,8 @@ function run(cmd, args) {
   if (res.status !== 0) process.exit(res.status ?? 1);
 }
 
-if (existsSync(join(root, "package.json"))) {
-  run("npm", ["test"]);
-  run("npm", ["run", "build"]);
-}
+// Historical MVP checks only. Active track: node .agents/verify/run-php.mjs
+// (No npm install / Vite build — runtime is PHP + public/.)
 
 const checks = readdirSync(verifyDir)
   .filter((f) => /^m\d+-check\.mjs$/.test(f))

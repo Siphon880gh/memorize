@@ -11,8 +11,8 @@ for (const p of ["public/index.php", "public/assets/app.css", "public/assets/js/
 }
 const html = readFileSync(join(root, "public/index.php"), "utf8");
 if (!html.includes('id="app"')) fail("index.php missing #app");
-if (!html.includes("/assets/app.css")) fail("index.php missing CSS");
-if (!html.includes("/assets/js/app.js")) fail("index.php missing app.js");
+if (!html.includes("assets/app.css")) fail("index.php missing CSS");
+if (!html.includes("assets/js/app.js")) fail("index.php missing app.js");
 const lint = spawnSync("php", ["-l", join(root, "public/index.php")], { encoding: "utf8" });
 if (lint.status !== 0) fail("php -l failed");
 if (errors.length) { console.error("P1 VERIFY FAIL"); errors.forEach((e) => console.error(" -", e)); process.exit(1); }

@@ -4,15 +4,13 @@ Client-side training app for memorizing scriptures, speeches, monologues, and ot
 
 **Path:** Read → Understand → Reduce → Visualize → Reconstruct → Recall → Master
 
-## Run (PHP — preferred)
+## Run (PHP)
 
 Requires PHP 7.4+ (MAMP) or 8+. No `npm install`.
 
 **MAMP / Apache (this repo under `weng/app/sp/memorize`):**
 
 http://localhost:8888/weng/app/sp/memorize/
-
-(`index.php` at the project root; assets load from `public/assets/`. Legacy Vite `index.html` was renamed to `index.vite-legacy.html` so Apache serves PHP.)
 
 **Built-in PHP server:**
 
@@ -22,6 +20,17 @@ php -S localhost:8080 -t public
 ```
 
 Open http://localhost:8080
+
+## Develop
+
+Yes — this is a **PHP + vanilla JS** app. Edit under `public/` only:
+
+- `public/index.php` — page shell
+- `public/assets/js/app.js` — **canonical UI** (what the browser loads)
+- `public/assets/js/tour.js`
+- `public/assets/app.css`
+
+`public/assets/js/lib/` (+ related verify helpers) support `node --test` checks. Do not reintroduce Vite/npm for day-to-day work. The old TypeScript tree was removed ([`LEGACY_TS.md`](LEGACY_TS.md)).
 
 ## Data
 
@@ -42,7 +51,7 @@ The app never calls the ChatGPT API.
 
 ## Sharing
 
-Share links carry title / type / Bible reference. Bible shares omit translation text by default.
+Share links carry title / type / Bible reference (and text when included). Opening a share link adds/opens that passage in the library.
 
 ## Verify (optional, for agents/devs)
 
@@ -51,7 +60,3 @@ Node is only needed for automated checks, not to run the app:
 ```bash
 node .agents/verify/run-php.mjs
 ```
-
-## Legacy TypeScript
-
-The original Vite/TS tree under `src/` is documented in [`LEGACY_TS.md`](LEGACY_TS.md). It is not required to run the PHP app.
