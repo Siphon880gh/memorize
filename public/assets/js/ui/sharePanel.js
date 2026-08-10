@@ -5,9 +5,9 @@ import {
 function mountShareControls(host, passage) {
   const canIncludeText = passage.type !== "bible";
   host.innerHTML = `
-    <div class="row" style="margin-top:0.75rem">
+    <div style="margin-top:0.75rem; margin-bottom:0.75rem">
       ${canIncludeText ? `<label class="inline"><input type="checkbox" id="include-text" /> Include text in link</label>` : `<span class="empty">Bible shares send reference only (no translation body).</span>`}
-      <button class="btn secondary" type="button" id="copy-share">Copy share link</button>
+      <br/><button class="btn secondary" type="button" id="copy-share">Copy share link</button>
       <button class="btn secondary" type="button" id="native-share">Share\u2026</button>
       <span class="toast" id="share-toast" hidden></span>
     </div>

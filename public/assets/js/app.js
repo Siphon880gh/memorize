@@ -21,9 +21,63 @@
     type: "bible",
     title: "Psalm 91",
     bibleReference: "Psalm 91",
-    versionHint: "NIV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2091&version=NIV",
-    text: ""
+    versionHint: "KJV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2091&version=KJV",
+    text: [
+      "He that dwelleth in the secret place of the most High shall abide under the shadow of the Almighty.",
+      "I will say of the LORD, He is my refuge and my fortress: my God; in him will I trust.",
+      "Surely he shall deliver thee from the snare of the fowler, and from the noisome pestilence.",
+      "He shall cover thee with his feathers, and under his wings shalt thou trust: his truth shall be thy shield and buckler.",
+      "Thou shalt not be afraid for the terror by night; nor for the arrow that flieth by day;",
+      "Nor for the pestilence that walketh in darkness; nor for the destruction that wasteth at noonday.",
+      "A thousand shall fall at thy side, and ten thousand at thy right hand; but it shall not come nigh thee.",
+      "Only with thine eyes shalt thou behold and see the reward of the wicked.",
+      "Because thou hast made the LORD, which is my refuge, even the most High, thy habitation;",
+      "There shall no evil befall thee, neither shall any plague come nigh thy dwelling.",
+      "For he shall give his angels charge over thee, to keep thee in all thy ways.",
+      "They shall bear thee up in their hands, lest thou dash thy foot against a stone.",
+      "Thou shalt tread upon the lion and adder: the young lion and the dragon shalt thou trample under feet.",
+      "Because he hath set his love upon me, therefore will I deliver him: I will set him on high, because he hath known my name.",
+      "He shall call upon me, and I will answer him: I will be with him in trouble; I will deliver him, and honour him.",
+      "With long life will I satisfy him, and shew him my salvation."
+    ].join("\n")
+  };
+
+  // src/data/samplePsalm23.ts
+  var PSALM_23_STARTER = {
+    type: "bible",
+    title: "Psalm 23 The LORD Is My Shepherd",
+    bibleReference: "Psalm 23",
+    versionHint: "KJV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=KJV",
+    text: [
+      "The LORD is my shepherd; I shall not want.",
+      "He maketh me to lie down in green pastures: he leadeth me beside the still waters.",
+      "He restoreth my soul: he leadeth me in the paths of righteousness for his name's sake.",
+      "Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.",
+      "Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.",
+      "Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the LORD for ever."
+    ].join("\n")
+  };
+
+  // src/data/sampleArmorOfGod.ts
+  var ARMOR_OF_GOD_STARTER = {
+    type: "bible",
+    title: "Armor of God",
+    bibleReference: "Ephesians 6:10-18",
+    versionHint: "KJV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Ephesians%206%3A10-18&version=KJV",
+    text: [
+      "Finally, my brethren, be strong in the Lord, and in the power of his might.",
+      "Put on the whole armour of God, that ye may be able to stand against the wiles of the devil.",
+      "For we wrestle not against flesh and blood, but against principalities, against powers, against the rulers of the darkness of this world, against spiritual wickedness in high places.",
+      "Wherefore take unto you the whole armour of God, that ye may be able to withstand in the evil day, and having done all, to stand.",
+      "Stand therefore, having your loins girt about with truth, and having on the breastplate of righteousness;",
+      "And your feet shod with the preparation of the gospel of peace;",
+      "Above all, taking the shield of faith, wherewith ye shall be able to quench all the fiery darts of the wicked.",
+      "And take the helmet of salvation, and the sword of the Spirit, which is the word of God:",
+      "Praying always with all prayer and supplication in the Spirit, and watching thereunto with all perseverance and supplication for all saints;"
+    ].join("\n")
   };
 
   // src/lib/share.ts
@@ -264,9 +318,10 @@
     const passages = repo2.listPassages();
     const count = passages.length;
     root.innerHTML = `
+    <div class="app-shell">
     <header class="topbar">
       <div>
-        <h1 class="brand">Memorize <span>Script</span></h1>
+        <button class="brand" type="button" id="brand-home" title="Back to library">Memorize <span>Script</span></button>
         <p class="tagline">Train long spoken material until hints drop to zero.</p>
       </div>
       <nav class="row top-nav" aria-label="Primary">
@@ -309,12 +364,15 @@
       <div class="row library-head">
         <h2 style="margin:0">Your library (${count})</h2>
         <div class="row starter-row">
-          <button class="btn secondary" type="button" id="add-psalm91">Psalm 91 starter</button>
+          <button class="btn secondary" type="button" id="add-psalm91">Psalm 91</button>
+          <button class="btn secondary" type="button" id="add-psalm23">Psalm 23</button>
+          <button class="btn secondary" type="button" id="add-armor-of-god">Armor of God</button>
           <button class="btn secondary" type="button" id="add-daily-bread">Daily Bread Prayer</button>
         </div>
       </div>
       ${count === 0 ? `<p class="empty">No passages yet. Add one above, or use a starter.</p>` : `<ul class="passage-list">${passages.map(renderItem).join("")}</ul>`}
     </section>
+    </div>
   `;
     const form = root.querySelector("#passage-form");
     form?.addEventListener("submit", (e) => {
@@ -338,6 +396,11 @@
     root.querySelector("#cancel-edit")?.addEventListener("click", () => {
       renderLibrary(root, repo2, callbacks, null);
     });
+    root.querySelector("#brand-home")?.addEventListener("click", () => {
+      history.replaceState(null, "", "#");
+      renderLibrary(root, repo2, callbacks, null);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
     root.querySelector("#goto-library")?.addEventListener("click", () => {
       root.querySelector("#library-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -346,6 +409,12 @@
     });
     root.querySelector("#add-psalm91")?.addEventListener("click", () => {
       callbacks.onPsalm91Starter?.();
+    });
+    root.querySelector("#add-psalm23")?.addEventListener("click", () => {
+      callbacks.onPsalm23Starter?.();
+    });
+    root.querySelector("#add-armor-of-god")?.addEventListener("click", () => {
+      callbacks.onArmorOfGodStarter?.();
     });
     root.querySelector("#add-daily-bread")?.addEventListener("click", () => {
       callbacks.onDailyBreadStarter?.();
@@ -445,7 +514,7 @@
       <div class="app-shell">
         <header class="topbar">
           <div>
-            <h1 class="brand">Memorize <span>Script</span></h1>
+            <button class="brand" type="button" id="brand-home" title="Back to library">Memorize <span>Script</span></button>
             <p class="tagline">Personal scoreboard \u2014 chase zero hints.</p>
           </div>
           <nav class="row top-nav" aria-label="Primary">
@@ -488,6 +557,7 @@
       </div>
     `;
       root.querySelector("#back-lib")?.addEventListener("click", opts.onBack);
+      root.querySelector("#brand-home")?.addEventListener("click", opts.onBack);
       root.querySelector("#sort-by")?.addEventListener("change", (e) => {
         sortBy = e.target.value;
         paint();
@@ -858,11 +928,11 @@
   function mountShareControls(host, passage) {
     const canIncludeText = passage.type !== "bible";
     host.innerHTML = `
-    <div class="row" style="margin-top:0.75rem">
+    <div style="margin-top:0.75rem; margin-bottom:0.75rem">
       ${canIncludeText ? `<label class="inline"><input type="checkbox" id="include-text" checked /> Include text in link</label>` : `<span class="empty">Bible shares send reference only (no translation body). Recipients open a library item they can paste into.</span>`}
-      <button class="btn secondary" type="button" id="copy-share">Copy share link</button>
-      <button class="btn secondary" type="button" id="native-share">Share\u2026</button>
-      <span class="toast" id="share-toast" hidden></span>
+      <br/><button class="btn secondary" type="button" id="copy-share">Copy share link</button>
+      <button class="btn secondary" style="margin-top:0.5rem;" type="button" id="native-share">Share\u2026</button>
+      <span class="toast" style="margin-top:0.5rem;" id="share-toast" hidden></span>
     </div>
   `;
     const toast = (msg) => {
@@ -916,20 +986,68 @@
     if (idx < 0 || idx >= STAGE_ORDER.length - 1) return null;
     return STAGE_ORDER[idx + 1];
   }
+  function stageLabel(stage) {
+    return `${stage[0].toUpperCase()}${stage.slice(1)}`;
+  }
+  /** Next stage still needed for mastery credit (ordered path). */
+  function masteryNext(passage) {
+    for (const s of STAGE_ORDER) {
+      if (!isComplete(passage, s)) return s;
+    }
+    return null;
+  }
+  /** Which training track is active / which accordion is open (session UI state). */
+  var trainingUi = {
+    activeTrack: "mastery",
+    openTrack: null,
+    passageId: null
+  };
+  function setTrainingTrack(track, opts = {}) {
+    if (opts.toggle) {
+      trainingUi.openTrack = trainingUi.openTrack === track ? null : track;
+      if (trainingUi.openTrack === track) trainingUi.activeTrack = track;
+      return;
+    }
+    if (opts.open === true) {
+      trainingUi.openTrack = track;
+      trainingUi.activeTrack = track;
+      return;
+    }
+    if (opts.open === false) {
+      trainingUi.openTrack = null;
+      return;
+    }
+    trainingUi.activeTrack = track;
+  }
   function renderTraining(root, repo2, passageId, callbacks, stage = "read") {
     let passage = repo2.getPassage(passageId);
     if (!passage) {
       callbacks.onBack();
       return;
     }
+    if (trainingUi.passageId !== passageId) {
+      trainingUi.passageId = passageId;
+      trainingUi.activeTrack = "mastery";
+      trainingUi.openTrack = null;
+    }
     passage = syncSegments(repo2, passage);
     const libraryCount = repo2.listPassages().length;
-    const activeStage = isUnlocked(passage, stage) ? stage : "read";
+    const masteryFocus = masteryNext(passage);
+    let activeStage = STAGE_ORDER.includes(stage) ? stage : "read";
+    if (trainingUi.activeTrack === "mastery" && !isUnlocked(passage, activeStage)) {
+      activeStage = masteryFocus ?? "read";
+      history.replaceState(null, "", `#passage/${passageId}/${activeStage}`);
+    }
+    const masteryResumeLabel = masteryFocus == null ? "Open Master checklist" : masteryFocus === activeStage ? `Stay on ${stageLabel(masteryFocus)} \u2014 finish this for mastery` : `Continue mastery \u2192 ${stageLabel(masteryFocus)}`;
+    const masteryOpen = trainingUi.openTrack === "mastery";
+    const practiceOpen = trainingUi.openTrack === "practice";
+    const masteryActive = trainingUi.activeTrack === "mastery";
+    const practiceActive = trainingUi.activeTrack === "practice";
     root.innerHTML = `
     <div class="app-shell">
       <header class="topbar">
         <div>
-          <h1 class="brand">Memorize <span>Script</span></h1>
+          <button class="brand" type="button" id="brand-home" title="Back to library">Memorize <span>Script</span></button>
           <p class="tagline">${esc2(passage.title)}${passage.bibleReference ? ` \xB7 ${esc2(passage.bibleReference)}` : ""}</p>
         </div>
         <nav class="row top-nav" aria-label="Primary">
@@ -937,25 +1055,74 @@
         </nav>
       </header>
       <div id="share-host"></div>
-      <nav class="stage-nav panel" aria-label="Training stages">
-        ${STAGE_ORDER.map((s) => {
+      <section class="tracks-panel" aria-label="Training tracks">
+        <div class="track track-mastery ${masteryActive ? "is-active" : ""} ${masteryOpen ? "is-open" : ""}">
+          <button type="button" class="track-toggle" id="toggle-mastery" aria-expanded="${masteryOpen ? "true" : "false"}" aria-controls="mastery-body">
+            <span class="track-toggle-main">
+              <strong class="track-title">Mastery path</strong>
+              ${masteryActive ? `<span class="track-badge">Active</span>` : ""}
+              <span class="track-desc">Jump back to finished stages, or continue to the next one. Locked stages stay ahead until you reach them.</span>
+            </span>
+            <span class="track-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="track-body" id="mastery-body" ${masteryOpen ? "" : "hidden"}>
+            <ol class="mastery-steps" aria-label="Mastery order">
+              ${STAGE_ORDER.map((s, i) => {
       const done = isComplete(passage, s);
-      const unlocked = isUnlocked(passage, s);
+      const reachable = isUnlocked(passage, s);
+      const isFocus = s === masteryFocus;
+      const isHere = s === activeStage && masteryActive;
+      const cls = [
+        "mastery-step",
+        done ? "step-done" : isFocus ? "step-next" : "step-todo",
+        isHere ? "step-here" : "",
+        reachable ? "is-reachable" : "is-locked"
+      ].filter(Boolean).join(" ");
+      const mark = done ? "\u2713 " : isFocus ? "\u2192 " : "";
+      const title = reachable ? stageLabel(s) : "Finish earlier stages first";
+      return `${i ? `<li class="step-sep" aria-hidden="true">\u2192</li>` : ""}<li class="${cls}"><button type="button" class="mastery-step-btn" data-mastery-stage="${s}" ${reachable ? "" : "disabled"} title="${title}">${mark}${stageLabel(s)}</button></li>`;
+    }).join("")}
+            </ol>
+            <div class="row">
+              <button class="btn" type="button" id="resume-mastery">${esc2(masteryResumeLabel)}</button>
+              <button class="btn secondary" type="button" id="reset-mastery-path">Reset</button>
+            </div>
+          </div>
+        </div>
+        <div class="track track-free ${practiceActive ? "is-active" : ""} ${practiceOpen ? "is-open" : ""}">
+          <button type="button" class="track-toggle" id="toggle-practice" aria-expanded="${practiceOpen ? "true" : "false"}" aria-controls="practice-body">
+            <span class="track-toggle-main">
+              <strong class="track-title">Practice any mode</strong>
+              ${practiceActive ? `<span class="track-badge">Active</span>` : ""}
+              <span class="track-desc">Jump around and try techniques anytime.</span>
+            </span>
+            <span class="track-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="track-body" id="practice-body" ${practiceOpen ? "" : "hidden"}>
+            <nav class="stage-nav" aria-label="Practice modes">
+              ${STAGE_ORDER.filter((s) => s !== "master").map((s) => {
+      const done = isComplete(passage, s);
+      const onPath = isUnlocked(passage, s);
       const classes = [
         "stage-pill",
         s === activeStage ? "active" : "",
         done ? "done" : "",
-        unlocked ? "" : "locked"
+        !onPath && !done ? "practice-only" : ""
       ].filter(Boolean).join(" ");
-      const label = `${done ? "\u2713 " : ""}${s[0].toUpperCase()}${s.slice(1)}`;
-      return `<button type="button" class="${classes}" data-stage="${s}" ${unlocked ? "" : "disabled"} title="${unlocked ? s : "Complete the previous stage first"}">${label}</button>`;
+      const label = `${done ? "\u2713 " : ""}${stageLabel(s)}`;
+      const title = !onPath && !done ? "Practice freely \u2014 complete earlier stages for mastery credit" : stageLabel(s);
+      return `<button type="button" class="${classes}" data-stage="${s}" title="${title}">${label}</button>`;
     }).join("")}
-      </nav>
+            </nav>
+          </div>
+        </div>
+      </section>
       <p class="toast" id="stage-toast" hidden></p>
       <section class="panel" id="stage-panel"></section>
     </div>
   `;
-    const go = (next) => {
+    const go = (next, track) => {
+      if (track) setTrainingTrack(track, { open: true });
       history.replaceState(null, "", `#passage/${passageId}/${next}`);
       renderTraining(root, repo2, passageId, callbacks, next);
     };
@@ -966,16 +1133,62 @@
       el.textContent = msg;
     };
     root.querySelector("#back-lib")?.addEventListener("click", callbacks.onBack);
+    root.querySelector("#brand-home")?.addEventListener("click", callbacks.onBack);
+    root.querySelector("#toggle-mastery")?.addEventListener("click", () => {
+      setTrainingTrack("mastery", { toggle: true });
+      renderTraining(root, repo2, passageId, callbacks, activeStage);
+    });
+    root.querySelector("#toggle-practice")?.addEventListener("click", () => {
+      setTrainingTrack("practice", { toggle: true });
+      renderTraining(root, repo2, passageId, callbacks, activeStage);
+    });
+    root.querySelector("#resume-mastery")?.addEventListener("click", () => {
+      go(masteryFocus ?? "master", "mastery");
+    });
+    root.querySelector("#reset-mastery-path")?.addEventListener("click", () => {
+      openHelpModal(
+        "Reset mastery?",
+        `<p>This clears mastery, sets hints/wins back to <strong>0</strong>, unlocks stages from the start, and returns you to <strong>Read</strong>.</p>
+       <p>Choose whether to keep study content you filled in (notes, ChatGPT reductions, visual anchors / image URLs).</p>
+       <div class="row modal-actions">
+         <button type="button" class="btn" id="reset-keep">Keep filled info</button>
+         <button type="button" class="btn danger" id="reset-clear">Reset filled info too</button>
+         <button type="button" class="btn secondary" id="reset-cancel">Cancel</button>
+       </div>`
+      );
+      const modal = document.getElementById("app-help-modal");
+      const finish = (mode) => {
+        const updated = resetMastery(passage, mode);
+        savePassage(repo2, updated);
+        Object.assign(passage, updated);
+        modal?.remove();
+        go("read", "mastery");
+      };
+      modal?.querySelector("#reset-keep")?.addEventListener("click", () => finish("keep_content"));
+      modal?.querySelector("#reset-clear")?.addEventListener("click", () => finish("clear_content"));
+      modal?.querySelector("#reset-cancel")?.addEventListener("click", () => modal.remove());
+    });
+    root.querySelectorAll("[data-mastery-stage]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const next = btn.dataset.masteryStage;
+        if (!next) return;
+        if (!isUnlocked(passage, next)) {
+          toast("Finish earlier stages first to move forward on the mastery path.");
+          return;
+        }
+        go(next, "mastery");
+      });
+    });
     const shareHost = root.querySelector("#share-host");
     if (shareHost) mountShareControls(shareHost, passage);
     root.querySelectorAll("[data-stage]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const next = btn.dataset.stage;
-        if (!isUnlocked(passage, next)) {
-          toast("Complete the previous stage first.");
-          return;
+        if (!next) return;
+        if (!isUnlocked(passage, next) && !isComplete(passage, next)) {
+          toast("Practicing off the mastery path \u2014 finish earlier stages later for mastery credit.");
         }
-        go(next);
+        go(next, "practice");
       });
     });
     const panel = root.querySelector("#stage-panel");
@@ -990,25 +1203,24 @@
     const bindContinue = (from) => {
       panel.querySelector("#continue-next")?.addEventListener("click", () => {
         const n = nextStage(from);
-        if (n) go(n);
+        if (n) go(n, "mastery");
       });
     };
     if (activeStage === "read") {
       renderRead(panel, repo2, passage, () => {
         const updated = markStage(repo2, passage, "read");
         Object.assign(passage, updated);
-        go("understand");
+        go("understand", "mastery");
       });
     } else if (activeStage === "understand") {
       renderUnderstand(panel, repo2, passage, (updated) => {
         Object.assign(passage, updated);
-        go("understand");
         renderTraining(root, repo2, passageId, callbacks, "understand");
       });
       if (isComplete(passage, "understand")) {
         panel.insertAdjacentHTML(
           "beforeend",
-          continueRow("understand", "Continue \u2192 Reduce")
+          continueRow("understand", "Continue mastery \u2192 Reduce")
         );
         bindContinue("understand");
       }
@@ -1020,7 +1232,7 @@
       if (isComplete(passage, "reduce")) {
         panel.insertAdjacentHTML(
           "beforeend",
-          continueRow("reduce", "Continue \u2192 Visualize")
+          continueRow("reduce", "Continue mastery \u2192 Visualize")
         );
         bindContinue("reduce");
       }
@@ -1032,7 +1244,7 @@
       if (isComplete(passage, "visualize")) {
         panel.insertAdjacentHTML(
           "beforeend",
-          continueRow("visualize", "Continue \u2192 Reconstruct")
+          continueRow("visualize", "Continue mastery \u2192 Reconstruct")
         );
         bindContinue("visualize");
       }
@@ -1044,12 +1256,13 @@
     } else if (activeStage === "recall") {
       renderRecall(panel, repo2, passage, (updated) => {
         Object.assign(passage, updated);
+        if (trainingUi.activeTrack === "practice") return;
         renderTraining(root, repo2, passageId, callbacks, "recall");
       });
     } else if (activeStage === "master") {
       renderMaster(panel, repo2, passage, (updated) => {
         Object.assign(passage, updated);
-        go("read");
+        go("read", "mastery");
       });
     }
   }
@@ -1098,7 +1311,7 @@
              ${passage.segments.map((s) => `<li><span class="seg-idx">${s.index + 1}</span> ${esc2(s.text)}</li>`).join("")}
            </ol>
            <div class="row stage-next-row">
-             <button class="btn stage-next" type="button" id="mark-read">Mark Read complete \u2192 Understand</button>
+             <button class="btn stage-next" type="button" id="mark-read">Mark Read complete \u2192 Continue mastery</button>
            </div>`}
   `;
     panel.querySelector("#mark-read")?.addEventListener("click", () => {
@@ -1204,7 +1417,7 @@
         <button class="btn secondary" type="button" id="reset-order">Reset attempt</button>
       </div>
       <p class="toast" id="order-toast">${esc2(message)}</p>
-      ${isComplete(passage, "reconstruct") ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="continue-recall">Continue \u2192 Recall</button></div>` : ""}
+      ${isComplete(passage, "reconstruct") ? trainingUi.activeTrack === "practice" ? `<p class="empty stage-practice-status">Try another technique/phase</p>` : `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="continue-recall">Continue \u2192 Recall</button></div>` : ""}
     `;
       panel.querySelector("#reconstruct-cue")?.addEventListener("change", (e) => {
         const next = e.target.value;
@@ -1331,11 +1544,16 @@
   function renderRecall(panel, repo2, passage, onDone) {
     let level = "none";
     let reveal = false;
+    let draftText = "";
+    let lastCheck = null;
     const startedAt = Date.now();
     let hintsUsed = 0;
     const hintEvents = [];
     const paint = () => {
       const cue = localReduction(level, passage.text, passage.reductions[level]);
+      const practiceTrack = trainingUi.activeTrack === "practice";
+      const practiceDone = practiceTrack && (lastCheck?.ok || isComplete(passage, "recall"));
+      const toastText = lastCheck ? lastCheck.ok ? `${lastCheck.pct}% \u2014 you're done${lastCheck.hintsUsed ? ` (${lastCheck.hintsUsed} hint(s))` : ""}.` : `Not yet (${lastCheck.pct}% match). Keep the wording closer to the original.` : "";
       panel.innerHTML = `
       <h2>Recall</h2>
       <p class="empty">Type the passage from memory. Checking is <strong>case-insensitive</strong> and <strong>lax about punctuation</strong> \u2014 but key words still need to be there. Revealing the original counts as a hint; changing the cue dropdown does not.</p>
@@ -1346,16 +1564,16 @@
       </label>
       <pre class="cue-pre">${esc2(cue || "(no hints)")}</pre>
       <label>Your recall
-        <textarea id="recall-text" placeholder="Type what you remember\u2026"></textarea>
+        <textarea id="recall-text" placeholder="Type what you remember\u2026">${esc2(draftText)}</textarea>
       </label>
       ${reveal ? `<pre class="cue-pre original">${esc2(passage.text)}</pre>` : ""}
       <div class="row">
         <button class="btn secondary" type="button" id="recall-reveal">${reveal ? "Hide original" : "Reveal original (counts as hint)"}</button>
-        <button class="btn ${isComplete(passage, "recall") ? "secondary" : ""}" type="button" id="recall-done">Check recall</button>
+        <button class="btn ${isComplete(passage, "recall") || lastCheck?.ok ? "secondary" : ""}" type="button" id="recall-done">Check recall</button>
       </div>
       <p class="stats-line">Hints this attempt: <strong>${hintsUsed}</strong></p>
-      <p class="toast" id="recall-toast" hidden></p>
-      ${isComplete(passage, "recall") ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="continue-master">Continue \u2192 Master</button></div>` : ""}
+      <p class="toast" id="recall-toast" ${toastText ? "" : "hidden"}>${esc2(toastText)}</p>
+      ${practiceDone ? `<p class="empty stage-practice-status">Try another technique/phase</p>` : isComplete(passage, "recall") ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="continue-master">Continue \u2192 Master</button></div>` : ""}
     `;
       panel.querySelector("#recall-level")?.addEventListener("change", (e) => {
         level = e.target.value;
@@ -1375,15 +1593,22 @@
       });
       panel.querySelector("#recall-done")?.addEventListener("click", () => {
         const text = panel.querySelector("#recall-text")?.value ?? "";
+        draftText = text;
         const grade = gradeRecall(passage.text, text);
-        const toast = panel.querySelector("#recall-toast");
         if (grade.empty) {
+          lastCheck = null;
+          const toast = panel.querySelector("#recall-toast");
           if (toast) {
             toast.hidden = false;
             toast.textContent = "Type your recall before checking.";
           }
           return;
         }
+        lastCheck = {
+          ok: grade.ok,
+          pct: Math.round(grade.similarity * 100),
+          hintsUsed
+        };
         let updated = recordAttempt(passage, {
           stage: "recall",
           hintsUsed,
@@ -1402,11 +1627,16 @@
         }
         savePassage(repo2, updated);
         Object.assign(passage, updated);
-        if (toast) {
-          toast.hidden = false;
-          toast.textContent = grade.ok ? `Correct (${Math.round(grade.similarity * 100)}% match, ${hintsUsed} hint(s)).` : `Not yet (${Math.round(grade.similarity * 100)}% match). Keep the wording closer to the original.`;
+        if (grade.ok && practiceTrack) {
+          paint();
+          onDone(updated);
+          return;
         }
-        if (grade.ok) onDone(updated);
+        if (grade.ok) {
+          onDone(updated);
+          return;
+        }
+        paint();
       });
       panel.querySelector("#continue-master")?.addEventListener("click", () => {
         history.replaceState(null, "", `#passage/${passage.id}/master`);
@@ -1444,7 +1674,7 @@
       <button class="btn stage-next" type="button" id="mark-master" ${ready ? "" : "disabled"}>Mark mastered</button>
       <button class="btn danger" type="button" id="reset-mastery">Reset mastery</button>
     </div>
-    <p class="toast" id="master-toast">${passage.masteredAt ? "Mastered. Reset anytime to train again from Read." : ready ? "Ready to mark mastery." : "Finish locked stages and earn a correct zero-hint win first."}</p>
+    <p class="toast" id="master-toast">${passage.masteredAt ? "Mastered. Reset anytime to train again from Read." : ready ? "Ready to mark mastery." : "Finish the mastery path stages in order and earn a correct zero-hint win first. You can still practice any mode while you work toward that."}</p>
   `;
     panel.querySelector("#hint-details")?.addEventListener("click", () => {
       const body = scoredAttempts.length === 0 ? `<p>No Reconstruct or Recall attempts recorded yet.</p>
@@ -2056,8 +2286,42 @@
     "recall",
     "master"
   ]);
+  var STARTERS = [
+    PSALM_91_STARTER,
+    PSALM_23_STARTER,
+    ARMOR_OF_GOD_STARTER,
+    DAILY_BREAD_PRAYER_STARTER
+  ];
+  function findStarterMatch(starter) {
+    return repo.listPassages().find((p) => {
+      if (starter.bibleReference && p.bibleReference === starter.bibleReference) return true;
+      return p.title === starter.title;
+    });
+  }
+  /** Fill empty matching passages from known starters (fixes pre-text localStorage copies). */
+  function healEmptyStarters() {
+    for (const starter of STARTERS) {
+      if (!starter.text?.trim()) continue;
+      const match = findStarterMatch(starter);
+      if (match && !match.text.trim()) {
+        repo.upsertPassage({ ...starter, id: match.id });
+      }
+    }
+  }
+  /** Reuse an existing match (fill if empty) instead of always creating a duplicate. */
+  function applyStarter(starter) {
+    const match = findStarterMatch(starter);
+    if (match) {
+      if (!match.text.trim() && starter.text?.trim()) {
+        return repo.upsertPassage({ ...starter, id: match.id });
+      }
+      return match;
+    }
+    return repo.upsertPassage({ ...starter });
+  }
   function showLibrary(prefill) {
     history.replaceState(null, "", "#");
+    healEmptyStarters();
     renderLibrary(app, repo, {
       onOpenPassage: (id) => {
         history.replaceState(null, "", `#passage/${id}/read`);
@@ -2068,12 +2332,22 @@
         mount();
       },
       onPsalm91Starter: () => {
-        const created = repo.upsertPassage({ ...PSALM_91_STARTER });
+        const created = applyStarter(PSALM_91_STARTER);
+        history.replaceState(null, "", `#passage/${created.id}/read`);
+        mount();
+      },
+      onPsalm23Starter: () => {
+        const created = applyStarter(PSALM_23_STARTER);
+        history.replaceState(null, "", `#passage/${created.id}/read`);
+        mount();
+      },
+      onArmorOfGodStarter: () => {
+        const created = applyStarter(ARMOR_OF_GOD_STARTER);
         history.replaceState(null, "", `#passage/${created.id}/read`);
         mount();
       },
       onDailyBreadStarter: () => {
-        const created = repo.upsertPassage({ ...DAILY_BREAD_PRAYER_STARTER });
+        const created = applyStarter(DAILY_BREAD_PRAYER_STARTER);
         history.replaceState(null, "", `#passage/${created.id}/read`);
         mount();
       }
@@ -2108,6 +2382,7 @@
     );
   }
   function mount() {
+    healEmptyStarters();
     const hash = location.hash.replace(/^#/, "");
     const parts = hash.split("/").filter(Boolean);
     const shareEncoded = encodedShareFromHash(location.hash);

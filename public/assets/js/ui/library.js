@@ -8,9 +8,10 @@ function renderLibrary(root, repo, callbacks, editing) {
   const passages = repo.listPassages();
   const count = passages.length;
   root.innerHTML = `
+    <div class="app-shell">
     <header class="topbar">
       <div>
-        <h1 class="brand">Memorize <span>Script</span></h1>
+        <button class="brand" type="button" id="brand-home" title="Back to library">Memorize <span>Script</span></button>
         <p class="tagline">Train long spoken material until hints drop to zero.</p>
       </div>
       <nav class="row top-nav" aria-label="Primary">
@@ -53,12 +54,15 @@ function renderLibrary(root, repo, callbacks, editing) {
       <div class="row library-head">
         <h2 style="margin:0">Your library (${count})</h2>
         <div class="row starter-row">
-          <button class="btn secondary" type="button" id="add-psalm91">Psalm 91 starter</button>
+          <button class="btn secondary" type="button" id="add-psalm91">Psalm 91</button>
+          <button class="btn secondary" type="button" id="add-psalm23">Psalm 23</button>
+          <button class="btn secondary" type="button" id="add-armor-of-god">Armor of God</button>
           <button class="btn secondary" type="button" id="add-daily-bread">Daily Bread Prayer</button>
         </div>
       </div>
       ${count === 0 ? `<p class="empty">No passages yet. Add one above, or use a starter.</p>` : `<ul class="passage-list">${passages.map(renderItem).join("")}</ul>`}
     </section>
+    </div>
   `;
   const form = root.querySelector("#passage-form");
   form?.addEventListener("submit", (e) => {
@@ -82,6 +86,11 @@ function renderLibrary(root, repo, callbacks, editing) {
   root.querySelector("#cancel-edit")?.addEventListener("click", () => {
     renderLibrary(root, repo, callbacks, null);
   });
+  root.querySelector("#brand-home")?.addEventListener("click", () => {
+    history.replaceState(null, "", "#");
+    renderLibrary(root, repo, callbacks, null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
   root.querySelector("#goto-library")?.addEventListener("click", () => {
     root.querySelector("#library-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -90,6 +99,12 @@ function renderLibrary(root, repo, callbacks, editing) {
   });
   root.querySelector("#add-psalm91")?.addEventListener("click", () => {
     callbacks.onPsalm91Starter?.();
+  });
+  root.querySelector("#add-psalm23")?.addEventListener("click", () => {
+    callbacks.onPsalm23Starter?.();
+  });
+  root.querySelector("#add-armor-of-god")?.addEventListener("click", () => {
+    callbacks.onArmorOfGodStarter?.();
   });
   root.querySelector("#add-daily-bread")?.addEventListener("click", () => {
     callbacks.onDailyBreadStarter?.();

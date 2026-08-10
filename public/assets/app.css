@@ -91,6 +91,33 @@ textarea {
   margin: 0;
 }
 
+button.brand {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+button.brand:hover span,
+button.brand:focus-visible span {
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+button.brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
 .brand span {
   color: var(--accent);
 }
@@ -387,6 +414,12 @@ button.btn:disabled {
   margin-top: 1.25rem;
 }
 
+.stage-practice-status {
+  margin-top: 1.25rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 label.reduce-proficiency {
   display: block;
   margin-top: 1rem;
@@ -540,7 +573,169 @@ button.linkish {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+  margin-bottom: 0;
+}
+
+.tracks-panel {
+  display: grid;
+  gap: 0.65rem;
   margin-bottom: 1rem;
+}
+
+.track {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg1) 88%, transparent);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.track.is-active {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+  box-shadow: inset 3px 0 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg1));
+}
+
+.track-toggle {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.track-toggle:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.track-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.track-toggle-main {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.25rem 0.55rem;
+  align-items: baseline;
+}
+
+.track-toggle-main .track-desc {
+  grid-column: 1 / -1;
+}
+
+.track-title {
+  font-size: 1.02rem;
+  letter-spacing: -0.01em;
+}
+
+.track-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+}
+
+.track-desc {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.track-chevron {
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.35rem;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.track.is-open .track-chevron {
+  margin-top: 0.55rem;
+  transform: rotate(225deg);
+}
+
+.track-body {
+  padding: 0 1rem 1rem;
+}
+
+.track-body[hidden] {
+  display: none;
+}
+
+.mastery-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.4rem;
+  list-style: none;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.mastery-steps .step-done,
+.mastery-steps .step-done .mastery-step-btn {
+  color: var(--ok);
+}
+
+.mastery-steps .step-next,
+.mastery-steps .step-next .mastery-step-btn {
+  color: var(--accent);
+}
+
+.mastery-steps .step-todo,
+.mastery-steps .step-todo .mastery-step-btn {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.mastery-steps .step-sep {
+  opacity: 0.35;
+  font-weight: 500;
+}
+
+.mastery-step-btn {
+  margin: 0;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mastery-step.is-reachable .mastery-step-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.mastery-step.step-here .mastery-step-btn {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.mastery-step.is-locked .mastery-step-btn {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .stage-pill {
@@ -562,6 +757,11 @@ button.linkish {
 .stage-pill.locked {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.stage-pill.practice-only:not(.active) {
+  border-style: dashed;
+  opacity: 0.85;
 }
 
 .stage-pill.done:not(.active) {

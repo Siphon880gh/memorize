@@ -24,6 +24,11 @@ const STAGES = [
   { id: "recall", label: "Recall", ready: true },
   { id: "master", label: "Master", ready: true }
 ];
+const trainingUi = {
+  activeTrack: "mastery",
+  openTrack: null,
+  passageId: null
+};
 function renderTraining(root, repo, passageId, callbacks, stage = "read") {
   let passage = repo.getPassage(passageId);
   if (!passage) {
@@ -32,11 +37,21 @@ function renderTraining(root, repo, passageId, callbacks, stage = "read") {
   }
   passage = syncSegments(repo, passage);
   const libraryCount = repo.listPassages().length;
+  const activeStage = STAGES.some((s) => s.id === stage) ? stage : "read";
+  if (trainingUi.passageId !== passageId) {
+    trainingUi.passageId = passageId;
+    trainingUi.activeTrack = "mastery";
+    trainingUi.openTrack = null;
+  }
+  const masteryOpen = trainingUi.openTrack === "mastery";
+  const practiceOpen = trainingUi.openTrack === "practice";
+  const masteryActive = trainingUi.activeTrack === "mastery";
+  const practiceActive = trainingUi.activeTrack === "practice";
   root.innerHTML = `
     <div class="app-shell">
       <header class="topbar">
         <div>
-          <h1 class="brand">Memorize <span>Script</span></h1>
+          <button class="brand" type="button" id="brand-home" title="Back to library">Memorize <span>Script</span></button>
           <p class="tagline">${esc(passage.title)}${passage.bibleReference ? ` \xB7 ${esc(passage.bibleReference)}` : ""}</p>
         </div>
         <nav class="row top-nav" aria-label="Primary">
@@ -44,39 +59,83 @@ function renderTraining(root, repo, passageId, callbacks, stage = "read") {
         </nav>
       </header>
       <div id="share-host"></div>
-      <nav class="stage-nav panel" aria-label="Training stages">
-        ${STAGES.map(
-    (s) => `<button type="button" class="stage-pill ${s.id === stage ? "active" : ""} ${s.ready ? "" : "soon"}" data-stage="${s.id}" ${s.ready ? "" : "disabled"}>${s.label}</button>`
+      <section class="tracks-panel" aria-label="Training tracks">
+        <div class="track track-mastery ${masteryActive ? "is-active" : ""} ${masteryOpen ? "is-open" : ""}">
+          <button type="button" class="track-toggle" id="toggle-mastery" aria-expanded="${masteryOpen ? "true" : "false"}" aria-controls="mastery-body">
+            <span class="track-toggle-main">
+              <strong class="track-title">Mastery path</strong>
+              ${masteryActive ? `<span class="track-badge">Active</span>` : ""}
+              <span class="track-desc">Follow stages in order for mastery credit.</span>
+            </span>
+            <span class="track-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="track-body" id="mastery-body" ${masteryOpen ? "" : "hidden"}>
+            <ol class="mastery-steps" aria-label="Mastery order">
+              ${STAGES.map((s, i) => `${i ? `<li class="step-sep" aria-hidden="true">\u2192</li>` : ""}<li class="${s.id === activeStage ? "step-next" : "step-todo"}">${s.label}</li>`).join("")}
+            </ol>
+          </div>
+        </div>
+        <div class="track track-free ${practiceActive ? "is-active" : ""} ${practiceOpen ? "is-open" : ""}">
+          <button type="button" class="track-toggle" id="toggle-practice" aria-expanded="${practiceOpen ? "true" : "false"}" aria-controls="practice-body">
+            <span class="track-toggle-main">
+              <strong class="track-title">Practice any mode</strong>
+              ${practiceActive ? `<span class="track-badge">Active</span>` : ""}
+              <span class="track-desc">Jump around and try techniques anytime.</span>
+            </span>
+            <span class="track-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="track-body" id="practice-body" ${practiceOpen ? "" : "hidden"}>
+            <nav class="stage-nav" aria-label="Practice modes">
+              ${STAGES.filter((s) => s.id !== "master").map(
+    (s) => `<button type="button" class="stage-pill ${s.id === activeStage ? "active" : ""} ${s.ready ? "" : "soon"}" data-stage="${s.id}" ${s.ready ? "" : "disabled"}>${s.label}</button>`
   ).join("")}
-      </nav>
+            </nav>
+          </div>
+        </div>
+      </section>
       <section class="panel" id="stage-panel"></section>
     </div>
   `;
   root.querySelector("#back-lib")?.addEventListener("click", callbacks.onBack);
+  root.querySelector("#brand-home")?.addEventListener("click", callbacks.onBack);
+  root.querySelector("#toggle-mastery")?.addEventListener("click", () => {
+    trainingUi.openTrack = trainingUi.openTrack === "mastery" ? null : "mastery";
+    if (trainingUi.openTrack === "mastery") trainingUi.activeTrack = "mastery";
+    renderTraining(root, repo, passageId, callbacks, activeStage);
+  });
+  root.querySelector("#toggle-practice")?.addEventListener("click", () => {
+    trainingUi.openTrack = trainingUi.openTrack === "practice" ? null : "practice";
+    if (trainingUi.openTrack === "practice") trainingUi.activeTrack = "practice";
+    renderTraining(root, repo, passageId, callbacks, activeStage);
+  });
   const shareHost = root.querySelector("#share-host");
   if (shareHost) mountShareControls(shareHost, passage);
   root.querySelectorAll("[data-stage]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const next = btn.dataset.stage;
+      trainingUi.activeTrack = "practice";
+      trainingUi.openTrack = "practice";
       history.replaceState(null, "", `#passage/${passageId}/${next}`);
       renderTraining(root, repo, passageId, callbacks, next);
     });
   });
   const panel = root.querySelector("#stage-panel");
   if (!panel) return;
-  if (stage === "read")
+  if (activeStage === "read")
     renderRead(panel, repo, passage, () => {
+      trainingUi.activeTrack = "mastery";
+      trainingUi.openTrack = "mastery";
       history.replaceState(null, "", `#passage/${passageId}/understand`);
       renderTraining(root, repo, passageId, callbacks, "understand");
     });
-  else if (stage === "understand") renderUnderstand(panel, repo, passage);
-  else if (stage === "reduce") renderReduce(panel, repo, passage);
-  else if (stage === "visualize") renderVisualize(panel, repo, passage);
-  else if (stage === "reconstruct") renderReconstruct(panel, repo, passage);
-  else if (stage === "recall") renderRecall(panel, repo, passage);
-  else if (stage === "master") renderMaster(panel, repo, passage);
+  else if (activeStage === "understand") renderUnderstand(panel, repo, passage);
+  else if (activeStage === "reduce") renderReduce(panel, repo, passage);
+  else if (activeStage === "visualize") renderVisualize(panel, repo, passage);
+  else if (activeStage === "reconstruct") renderReconstruct(panel, repo, passage);
+  else if (activeStage === "recall") renderRecall(panel, repo, passage);
+  else if (activeStage === "master") renderMaster(panel, repo, passage);
   else {
-    panel.innerHTML = `<h2>${stage}</h2><p class="empty">Unknown stage.</p>`;
+    panel.innerHTML = `<h2>${activeStage}</h2><p class="empty">Unknown stage.</p>`;
   }
 }
 function syncSegments(repo, passage) {

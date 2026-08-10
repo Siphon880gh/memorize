@@ -9,7 +9,7 @@ function renderScoreboard(root, repo, opts) {
       <div class="app-shell">
         <header class="topbar">
           <div>
-            <h1 class="brand">Memorize <span>Script</span></h1>
+            <button class="brand" type="button" id="brand-home" title="Back to library">Memorize <span>Script</span></button>
             <p class="tagline">Personal scoreboard \u2014 chase zero hints.</p>
           </div>
           <nav class="row top-nav" aria-label="Primary">
@@ -52,6 +52,7 @@ function renderScoreboard(root, repo, opts) {
       </div>
     `;
     root.querySelector("#back-lib")?.addEventListener("click", opts.onBack);
+    root.querySelector("#brand-home")?.addEventListener("click", opts.onBack);
     root.querySelector("#sort-by")?.addEventListener("change", (e) => {
       sortBy = e.target.value;
       paint();
