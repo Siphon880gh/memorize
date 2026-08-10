@@ -3,6 +3,9 @@ import {
   buildSharePayload,
   decodeSharePayload,
   encodeSharePayload,
+  encodedShareFromHash,
+  passageInputFromShare,
+  shareUrlFromPayload,
 } from "./share";
 
 describe("share", () => {
@@ -29,5 +32,25 @@ describe("share", () => {
     expect(payload.text).toBe("Hello world");
     const round = decodeSharePayload(encodeSharePayload(payload));
     expect(round?.text).toBe("Hello world");
+  });
+
+  it("reads share payload from hash and builds openable passage input", () => {
+    const payload = buildSharePayload(
+      { type: "speech", title: "Mine", text: "Hello world" },
+      { includeText: true },
+    );
+    const encoded = encodeSharePayload(payload);
+    expect(encodedShareFromHash(`#share/${encoded}`)).toBe(encoded);
+    expect(encodedShareFromHash("#scoreboard")).toBeNull();
+    expect(passageInputFromShare(payload)).toEqual({
+      type: "speech",
+      title: "Mine",
+      text: "Hello world",
+      bibleReference: undefined,
+      versionHint: undefined,
+    });
+    expect(
+      shareUrlFromPayload(payload, "http://localhost:8888", "/weng/app/sp/memorize/public/index.php"),
+    ).toBe(`http://localhost:8888/weng/app/sp/memorize/public/#share/${encoded}`);
   });
 });

@@ -53,6 +53,36 @@ export function decodeSharePayload(encoded: string): SharePayload | null {
   }
 }
 
-export function shareUrlFromPayload(payload: SharePayload, origin = location.origin, path = location.pathname): string {
-  return `${origin}${path}#share/${encodeSharePayload(payload)}`;
+export function shareUrlFromPayload(
+  payload: SharePayload,
+  origin = location.origin,
+  path = location.pathname,
+): string {
+  // Prefer directory URLs so Apache DirectoryIndex / root index.php still resolve.
+  const clean = path.replace(/\/index\.php$/i, "/");
+  return `${origin}${clean}#share/${encodeSharePayload(payload)}`;
+}
+
+/** Read `#share/<payload>` from a location hash (payload may contain `/`). */
+export function encodedShareFromHash(hash: string): string | null {
+  const raw = hash.replace(/^#/, "");
+  if (!raw.startsWith("share/")) return null;
+  const encoded = raw.slice("share/".length);
+  return encoded || null;
+}
+
+export function passageInputFromShare(payload: SharePayload): {
+  type: PassageType;
+  title: string;
+  text: string;
+  bibleReference?: string;
+  versionHint?: string;
+} {
+  return {
+    type: payload.type,
+    title: payload.title,
+    text: payload.text?.trim() ?? "",
+    bibleReference: payload.bibleReference,
+    versionHint: payload.versionHint,
+  };
 }

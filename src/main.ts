@@ -1,12 +1,16 @@
 import "./styles.css";
 import { DAILY_BREAD_PRAYER_STARTER } from "./data/sampleDailyBread";
 import { PSALM_91_STARTER } from "./data/samplePsalm91";
-import { decodeSharePayload } from "./lib/share";
+import {
+  decodeSharePayload,
+  encodedShareFromHash,
+  passageInputFromShare,
+} from "./lib/share";
 import { PassageRepository } from "./storage/repository";
 import { renderLibrary } from "./ui/library";
 import { renderScoreboard } from "./ui/scoreboard";
 import { renderTraining } from "./ui/training";
-import type { TrainingStage } from "./types";
+import type { Passage, TrainingStage } from "./types";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("#app missing");
@@ -75,22 +79,35 @@ function wrapShell(): void {
   app!.appendChild(shell);
 }
 
+function findExistingFromShare(payload: ReturnType<typeof passageInputFromShare>): Passage | undefined {
+  const text = payload.text;
+  const ref = payload.bibleReference ?? "";
+  return repo.listPassages().find(
+    (p) =>
+      p.type === payload.type &&
+      p.title === payload.title &&
+      (p.bibleReference ?? "") === ref &&
+      (p.text ?? "") === text,
+  );
+}
+
 function mount(): void {
   const hash = location.hash.replace(/^#/, "");
   const parts = hash.split("/").filter(Boolean);
 
-  if (parts[0] === "share" && parts[1]) {
-    const payload = decodeSharePayload(parts[1]);
+  const shareEncoded = encodedShareFromHash(location.hash);
+  if (shareEncoded) {
+    const payload = decodeSharePayload(shareEncoded);
     if (payload) {
-      showLibrary({
-        title: payload.title,
-        type: payload.type,
-        bibleReference: payload.bibleReference,
-        versionHint: payload.versionHint,
-        text: payload.text,
-      });
+      const input = passageInputFromShare(payload);
+      const existing = findExistingFromShare(input);
+      const passage = existing ?? repo.upsertPassage(input);
+      history.replaceState(null, "", `#passage/${passage.id}/read`);
+      renderTraining(app!, repo, passage.id, { onBack: showLibrary }, "read");
       return;
     }
+    // Broken share payload — land on library with a clear hash.
+    history.replaceState(null, "", "#");
   }
 
   if (parts[0] === "scoreboard") {
