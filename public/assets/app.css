@@ -243,11 +243,9 @@ textarea {
 
 .reduce-help {
   margin-top: 1.15rem;
-  padding: 1rem 1.05rem 1.1rem;
+  padding: 0;
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg1) 88%, black);
-  display: grid;
-  gap: 0.75rem;
 }
 
 .reduce-help.is-missing {
@@ -265,6 +263,46 @@ textarea {
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
+  list-style: none;
+  cursor: pointer;
+  padding: 0.85rem 1.05rem;
+  user-select: none;
+}
+
+.reduce-help-head::-webkit-details-marker {
+  display: none;
+}
+
+.reduce-help-head::after {
+  content: "▸";
+  color: var(--muted);
+  font-weight: 700;
+  margin-left: auto;
+  transition: transform 0.15s ease;
+}
+
+.reduce-help[open] > .reduce-help-head::after {
+  transform: rotate(90deg);
+}
+
+.reduce-help-title {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.reduce-help-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.reduce-help-body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0 1.05rem 1.1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.9rem;
 }
 
 .reduce-steps {

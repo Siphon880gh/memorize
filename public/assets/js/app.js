@@ -1691,11 +1691,15 @@
       }).join("")}
         </select>
       </label>
-      ${needsPaste ? `<section class="reduce-help ${pasteMissing ? "is-missing" : "is-ready"}" id="chatgpt-help" aria-live="polite">
-              <div class="reduce-help-head">
-                <strong>${pasteMissing ? "ChatGPT reduction required" : "ChatGPT reduction saved locally"}</strong>
+      ${needsPaste ? `<details class="reduce-help ${pasteMissing ? "is-missing" : "is-ready"}" id="chatgpt-help" ${pasteMissing ? "open" : ""}>
+              <summary class="reduce-help-head">
+                <span class="reduce-help-title">
+                  <strong>${pasteMissing ? "ChatGPT reduction required" : "ChatGPT reduction saved locally"}</strong>
+                  <span class="reduce-help-hint">${pasteMissing ? "Expand to paste from ChatGPT" : "Collapsed \u2014 expand to update or reset"}</span>
+                </span>
                 <span class="req-badge ${pasteMissing ? "missing" : "ok"}">${pasteMissing ? "Missing" : "Saved"}</span>
-              </div>
+              </summary>
+              <div class="reduce-help-body" aria-live="polite">
               ${pastedSaved ? `<p class="empty reduce-help-alt">This reduction stays with the passage until you reset it.${savedAt ? ` Last saved ${esc2(new Date(savedAt).toLocaleString())}.` : ""}</p>` : `<ol class="reduce-steps">
               <li>Copy the prompt below</li>
               <li>Open <a class="chatgpt-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT</a>, paste it, and generate</li>
@@ -1717,7 +1721,8 @@
                 <button class="btn" type="button" id="save-reduction">${pastedSaved ? "Update saved reduction" : "Save pasted reduction"}</button>
                 ${pastedSaved ? `<button class="btn danger" type="button" id="reset-reduction">Reset saved reduction</button>` : ""}
               </div>
-            </section>` : ""}
+              </div>
+            </details>` : ""}
       <div class="cue-box panel" style="margin-top:1rem;box-shadow:none">
         <p><strong>Practice cue</strong> \u2014 try to recall the full passage from this alone</p>
         <pre class="cue-pre">${esc2(cue || "(no hints \u2014 recall from memory)")}</pre>
@@ -1750,7 +1755,11 @@
         const gate = canComplete();
         if (!gate.ok) {
           toast(gate.reason, "warn");
-          panel.querySelector("#chatgpt-help")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          const help = panel.querySelector("#chatgpt-help");
+          if (help) {
+            help.open = true;
+            help.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
           panel.querySelector("#paste-reduction")?.classList.add("flash-missing");
           return;
         }
