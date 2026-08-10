@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { applyHint, gradeOrder, moveItem, shuffleItems } from "./ordering";
+import {
+  applyHint,
+  gradeOrder,
+  moveItem,
+  reconstructCardLabel,
+  segmentFirstWord,
+  segmentKeywords,
+  shuffleItems,
+} from "./ordering";
 
 describe("ordering", () => {
   it("grades correct, partial, and empty", () => {
@@ -31,5 +39,24 @@ describe("ordering", () => {
       return seq[n++ % seq.length]!;
     };
     expect(shuffleItems(items, rng)).not.toEqual(items);
+  });
+
+  it("builds reconstruct cues and reveals full text when placed correctly", () => {
+    const line = "Give us this day our daily bread.";
+    expect(segmentFirstWord(line)).toBe("Give");
+    expect(segmentKeywords(line)).toContain("daily");
+    expect(reconstructCardLabel(line, "first_word", false)).toEqual({
+      text: "Give",
+      revealed: false,
+    });
+    expect(reconstructCardLabel(line, "keywords", false).revealed).toBe(false);
+    expect(reconstructCardLabel(line, "full", false)).toEqual({
+      text: line,
+      revealed: false,
+    });
+    expect(reconstructCardLabel(line, "first_word", true)).toEqual({
+      text: line,
+      revealed: true,
+    });
   });
 });
