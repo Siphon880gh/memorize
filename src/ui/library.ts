@@ -1,5 +1,6 @@
+import { downloadText, exportDocument, importDocument } from "../lib/backup";
 import { PassageRepository } from "../storage/repository";
-import { PASSAGE_TYPES, type Passage, type PassageType } from "../types";
+import { PASSAGE_TYPES, STORAGE_KEY, type Passage, type PassageType } from "../types";
 
 export type LibraryCallbacks = {
   onOpenPassage: (id: string) => void;
@@ -27,6 +28,8 @@ export function renderLibrary(
       <div class="row">
         <button class="btn secondary" type="button" id="goto-scoreboard">Scoreboard</button>
         <button class="btn secondary" type="button" id="add-psalm91">Psalm 91 starter</button>
+        <button class="btn secondary" type="button" id="export-data">Export</button>
+        <label class="btn secondary" style="cursor:pointer">Import<input id="import-data" type="file" accept="application/json,.json" hidden /></label>
       </div>
     </header>
     <section class="panel">
@@ -97,6 +100,22 @@ export function renderLibrary(
   });
   root.querySelector("#add-psalm91")?.addEventListener("click", () => {
     callbacks.onPsalm91Starter?.();
+  });
+  root.querySelector("#export-data")?.addEventListener("click", () => {
+    downloadText("memorize-script-backup.json", exportDocument(repo.load()));
+  });
+  root.querySelector<HTMLInputElement>("#import-data")?.addEventListener("change", async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const doc = importDocument(text);
+      if (!confirm("Replace all local passages with this backup?")) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(doc));
+      renderLibrary(root, repo, callbacks, null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Import failed");
+    }
   });
 
   root.querySelectorAll<HTMLButtonElement>("[data-open]").forEach((btn) => {

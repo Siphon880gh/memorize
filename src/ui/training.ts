@@ -27,8 +27,8 @@ const STAGES: { id: TrainingStage; label: string; ready: boolean }[] = [
   { id: "reduce", label: "Reduce", ready: true },
   { id: "visualize", label: "Visualize", ready: true },
   { id: "reconstruct", label: "Reconstruct", ready: true },
-  { id: "recall", label: "Recall", ready: false },
-  { id: "master", label: "Master", ready: false },
+  { id: "recall", label: "Recall", ready: true },
+  { id: "master", label: "Master", ready: true },
 ];
 
 export function renderTraining(
@@ -88,8 +88,10 @@ export function renderTraining(
   else if (stage === "reduce") renderReduce(panel, repo, passage);
   else if (stage === "visualize") renderVisualize(panel, repo, passage);
   else if (stage === "reconstruct") renderReconstruct(panel, repo, passage);
+  else if (stage === "recall") renderRecall(panel, repo, passage);
+  else if (stage === "master") renderMaster(panel, repo, passage);
   else {
-    panel.innerHTML = `<h2>${stage}</h2><p class="empty">This stage arrives in a later milestone.</p>`;
+    panel.innerHTML = `<h2>${stage}</h2><p class="empty">Unknown stage.</p>`;
   }
 }
 
@@ -342,6 +344,127 @@ function renderReconstruct(
   };
 
   paint();
+}
+
+function renderRecall(panel: HTMLElement, repo: PassageRepository, passage: Passage): void {
+  let level: ReductionLevel = "none";
+  let reveal = false;
+  const startedAt = Date.now();
+  let hintsUsed = 0;
+
+  const paint = () => {
+    const cue = localReduction(level, passage.text, passage.reductions[level]);
+    panel.innerHTML = `
+      <h2>Recall</h2>
+      <p class="empty">Speak or write from memory. Use fading cues only if needed — goal is still zero hints.</p>
+      <label>Cue level
+        <select id="recall-level">
+          ${REDUCTION_LEVELS.map((l) => `<option value="${l.id}" ${l.id === level ? "selected" : ""}>${l.label}</option>`).join("")}
+        </select>
+      </label>
+      <pre class="cue-pre">${esc(cue || "(no hints)")}</pre>
+      <label>Your recall
+        <textarea id="recall-text" placeholder="Type what you remember…"></textarea>
+      </label>
+      ${reveal ? `<pre class="cue-pre original">${esc(passage.text)}</pre>` : ""}
+      <div class="row">
+        <button class="btn secondary" type="button" id="recall-reveal">${reveal ? "Hide original" : "Reveal original (counts as hint)"}</button>
+        <button class="btn" type="button" id="recall-done">Mark recall attempt</button>
+      </div>
+      <p class="toast" id="recall-toast" hidden></p>
+    `;
+    panel.querySelector("#recall-level")?.addEventListener("change", (e) => {
+      level = (e.target as HTMLSelectElement).value as ReductionLevel;
+      paint();
+    });
+    panel.querySelector("#recall-reveal")?.addEventListener("click", () => {
+      if (!reveal) hintsUsed += 1;
+      reveal = !reveal;
+      paint();
+    });
+    panel.querySelector("#recall-done")?.addEventListener("click", () => {
+      const text = panel.querySelector<HTMLTextAreaElement>("#recall-text")?.value.trim() ?? "";
+      const success = text.length > 0;
+      const updated = recordAttempt(passage, {
+        stage: "recall",
+        hintsUsed,
+        durationMs: Date.now() - startedAt,
+        success,
+      });
+      updated.stageProgress = {
+        ...updated.stageProgress,
+        recall: { completed: success, updatedAt: new Date().toISOString() },
+      };
+      savePassage(repo, updated);
+      Object.assign(passage, updated);
+      const toast = panel.querySelector<HTMLElement>("#recall-toast");
+      if (toast) {
+        toast.hidden = false;
+        toast.textContent = success
+          ? `Attempt saved (${hintsUsed} hint(s)). Bring the hint count down to 0.`
+          : "Type a recall before marking complete.";
+      }
+    });
+  };
+  paint();
+}
+
+function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Passage): void {
+  const stages: TrainingStage[] = [
+    "read",
+    "understand",
+    "reduce",
+    "visualize",
+    "reconstruct",
+    "recall",
+    "master",
+  ];
+  const checklist = stages.map((s) => ({
+    id: s,
+    done: Boolean(passage.stageProgress[s]?.completed) || (s === "master" && Boolean(passage.masteredAt)),
+  }));
+  const zeroHint = passage.stats.zeroHintCompletions > 0;
+  const ready = checklist.filter((c) => c.id !== "master").every((c) => c.done) && zeroHint;
+
+  panel.innerHTML = `
+    <h2>Master</h2>
+    <p class="empty">Mastery means the full path is practiced and you have a zero-hint reconstruct/recall win.</p>
+    <ul class="segment-list">
+      ${checklist
+        .map(
+          (c) =>
+            `<li><span class="seg-idx">${c.done ? "✓" : "·"}</span> ${c.id}${c.id === "master" ? " (this gate)" : ""}</li>`,
+        )
+        .join("")}
+      <li><span class="seg-idx">${zeroHint ? "✓" : "·"}</span> At least one zero-hint completion</li>
+    </ul>
+    <div class="row">
+      <button class="btn" type="button" id="mark-master" ${ready ? "" : "disabled"}>Mark mastered</button>
+      <span class="toast" id="master-toast">${ready ? "Ready to mark mastery." : "Complete earlier stages and earn a zero-hint win first."}</span>
+    </div>
+  `;
+
+  panel.querySelector("#mark-master")?.addEventListener("click", () => {
+    if (!ready) return;
+    const now = new Date().toISOString();
+    const updated: Passage = {
+      ...passage,
+      masteredAt: now,
+      stageProgress: {
+        ...passage.stageProgress,
+        master: { completed: true, updatedAt: now },
+      },
+      updatedAt: now,
+    };
+    updated.stats = {
+      ...updated.stats,
+      memorizationPercent: Math.max(updated.stats.memorizationPercent, 100),
+    };
+    savePassage(repo, updated);
+    Object.assign(passage, updated);
+    const toast = panel.querySelector<HTMLElement>("#master-toast");
+    if (toast) toast.textContent = "Mastered. Keep drilling to stay sharp.";
+  });
 }
 
 function renderVisualize(

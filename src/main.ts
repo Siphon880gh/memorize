@@ -1,4 +1,5 @@
 import "./styles.css";
+import { PSALM_91_STARTER } from "./data/samplePsalm91";
 import { decodeSharePayload } from "./lib/share";
 import { PassageRepository } from "./storage/repository";
 import { renderLibrary } from "./ui/library";
@@ -39,15 +40,7 @@ function showLibrary(prefill?: {
       mount();
     },
     onPsalm91Starter: () => {
-      const created = repo.upsertPassage({
-        type: "bible",
-        title: "Psalm 91",
-        bibleReference: "Psalm 91",
-        versionHint: "NIV",
-        bibleGatewayUrl:
-          "https://www.biblegateway.com/passage/?search=Psalm%2091&version=NIV",
-        text: "",
-      });
+      const created = repo.upsertPassage({ ...PSALM_91_STARTER });
       history.replaceState(null, "", `#passage/${created.id}/read`);
       mount();
     },
