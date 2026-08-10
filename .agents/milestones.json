@@ -1,0 +1,650 @@
+{
+  "version": 1,
+  "last_updated_iso": "2026-08-10T13:22:23Z",
+  "product": "memorize-script",
+  "notes": [
+    "Client-side MVP: localStorage + copy/paste ChatGPT workflows only.",
+    "No OpenAI/ChatGPT API keys or network calls to LLM providers in MVP milestones.",
+    "Error-fix budget for the continue loop is 5 rounds (see AGENTS_LOOP-Continue-Milestone.md).",
+    "Each milestone lists verify.auto checks the agent must run before marking done."
+  ],
+  "implementation_order": [
+    "M0",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6",
+    "M7",
+    "M8",
+    "M9",
+    "M10",
+    "M11",
+    "M12"
+  ],
+  "mvp_milestone_ids": [
+    "M0",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6",
+    "M7",
+    "M8",
+    "M9",
+    "M10"
+  ],
+  "later_milestone_ids": [
+    "M11",
+    "M12"
+  ],
+  "milestones": [
+    {
+      "id": "M0",
+      "epic_ids": ["E0"],
+      "name": "Freeze MVP interfaces & data model",
+      "priority": "Mandatory",
+      "goal": "Lock stack, storage schema, training stages, and verification conventions so later milestones do not thrash.",
+      "features": [
+        "Document stack choice (Vite + TypeScript + vanilla)",
+        "Define versioned localStorage document schema",
+        "Define training stage enum and passage type enum",
+        "Define ChatGPT prompt-template contract (copy out / paste back)",
+        "Record cost-avoidance rules (no LLM API in MVP)"
+      ],
+      "user_experience": "No end-user UI yet; planning gate only.",
+      "data_stored": [
+        "Decisions and schema drafts in .agents/state.json → decisions/contracts",
+        "Optional docs/DATA_MODEL.md mirroring the frozen schema"
+      ],
+      "technical_considerations": [
+        "Schema must support bible_reference vs custom_script without baking copyrighted text into share URLs",
+        "All IDs should be stable UUID/string keys for passages and attempts"
+      ],
+      "client_side": "N/A (docs/state only)",
+      "cost_avoidance": "Explicit ban on LLM provider SDKs/API keys for MVP",
+      "deliverables": [
+        "docs/DATA_MODEL.md with Passage, Segment, ReductionLevels, VisualAnchor, Attempt, ScoreboardEntry, Settings",
+        "Frozen decisions in .agents/state.json",
+        "scripts/verify-m0.mjs (or .agents/skills/verify-m0) that checks required decision keys exist"
+      ],
+      "acceptance": [
+        "state.json records stack, storage key name, schema version, stage list, passage types",
+        "DATA_MODEL.md exists and matches frozen contracts",
+        "verify.auto for M0 returns PASS",
+        "No application runtime code required beyond verify script"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "node .agents/verify/m0-check.mjs"
+        ],
+        "checks": [
+          "Required decision keys present in .agents/state.json",
+          "docs/DATA_MODEL.md exists and mentions Passage, Segment, Attempt",
+          "mvp_milestone_ids listed and non-empty"
+        ]
+      },
+      "depends_on": [],
+      "out_of_scope": [
+        "UI scaffolding",
+        "npm app dependencies beyond what verify needs"
+      ]
+    },
+    {
+      "id": "M1",
+      "epic_ids": ["E1"],
+      "name": "App scaffold + passage CRUD + localStorage",
+      "priority": "MVP",
+      "goal": "Runnable client app where a user can create, edit, list, and delete passages; data survives reload via localStorage.",
+      "features": [
+        "Vite + TypeScript project",
+        "Passage list / create / edit / delete",
+        "localStorage repository with schema version",
+        "Settings stub (theme optional later)"
+      ],
+      "user_experience": "Simple library home: add a custom script or Bible reference metadata + paste text; open a passage.",
+      "data_stored": [
+        "passages[]",
+        "settings",
+        "schemaVersion"
+      ],
+      "technical_considerations": [
+        "Pure client hosting (static build)",
+        "Defensive JSON parse + migration stub for schemaVersion"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "No backend; no analytics SaaS required",
+      "deliverables": [
+        "package.json, vite.config.ts, index.html, src/*",
+        "src/storage/repository.ts",
+        "src/ui/library views",
+        "Unit tests for repository load/save/migrate",
+        ".agents/verify/m1-check.mjs"
+      ],
+      "acceptance": [
+        "npm run build succeeds",
+        "npm test (or vitest) covers repository round-trip",
+        "Manual-equivalent AUTO: jsdom/vitest proves create+reload persistence",
+        "verify.auto M1 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m1-check.mjs"
+        ],
+        "checks": [
+          "Repository tests pass",
+          "Production build emits dist/",
+          "No openai/anthropic client imports in src/"
+        ]
+      },
+      "depends_on": ["M0"],
+      "out_of_scope": [
+        "Exercises",
+        "Sharing",
+        "ChatGPT prompts"
+      ]
+    },
+    {
+      "id": "M2",
+      "epic_ids": ["E2"],
+      "name": "Segmentation + Read / Understand stages",
+      "priority": "MVP",
+      "goal": "Break passage text into sentences/phrases and present Read then Understand stages.",
+      "features": [
+        "Segmenter (sentences; optional phrase split on ; — :)",
+        "Read stage: full text with segment markers",
+        "Understand stage: segment list, optional user notes per segment",
+        "Persist segments + notes on the passage"
+      ],
+      "user_experience": "Open passage → Read through marked segments → Understand reviews each unit with optional notes.",
+      "data_stored": [
+        "passage.segments[]",
+        "passage.segmentNotes{}",
+        "passage.stageProgress.read|understand"
+      ],
+      "technical_considerations": [
+        "Deterministic segmentation for stable ordering exercises later",
+        "Allow manual re-segmentation later without blocking MVP (keep algorithm simple)"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "Local regex/heuristic segmentation; no NLP API",
+      "deliverables": [
+        "src/lib/segment.ts + tests",
+        "Read/Understand views",
+        ".agents/verify/m2-check.mjs"
+      ],
+      "acceptance": [
+        "Segmenter unit tests cover multi-sentence and edge empty text",
+        "Stage progress persists across reload",
+        "npm test && npm run build PASS",
+        "verify.auto M2 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m2-check.mjs"
+        ],
+        "checks": [
+          "Segmenter tests pass",
+          "Read/Understand routes or views exist in src/"
+        ]
+      },
+      "depends_on": ["M1"],
+      "out_of_scope": [
+        "Reduction levels",
+        "Ordering game"
+      ]
+    },
+    {
+      "id": "M3",
+      "epic_ids": ["E3"],
+      "name": "Progressive script reduction + ChatGPT paste workflow",
+      "priority": "MVP",
+      "goal": "Practice with reduction levels; generate copyable ChatGPT prompts; paste AI reductions back into the app.",
+      "features": [
+        "Levels: full, essential, keywords, first_words, first_letters, none",
+        "Local generators for first_words / first_letters / none (no AI needed)",
+        "Prompt template for essential/keywords reduction via ChatGPT",
+        "Paste-back UI storing reduction text per level",
+        "Practice view: show current level cues; reveal original on demand"
+      ],
+      "user_experience": "User copies prompt → ChatGPT → pastes reduced text → drills levels toward no hints.",
+      "data_stored": [
+        "passage.reductions{level: text}",
+        "passage.reductionMeta{promptUsed, updatedAt}"
+      ],
+      "technical_considerations": [
+        "Never call LLM HTTP APIs",
+        "Keep original text authoritative; reductions are aids"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "User's own ChatGPT session; app stays free of API keys",
+      "deliverables": [
+        "src/lib/reduction.ts + prompt templates",
+        "Reduce stage UI",
+        "tests for local reducers + prompt contains passage text",
+        ".agents/verify/m3-check.mjs"
+      ],
+      "acceptance": [
+        "Local levels produce deterministic output from fixtures",
+        "Prompt builder includes user passage and instructions to preserve sequence",
+        "Paste-back persists in localStorage",
+        "verify.auto M3 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m3-check.mjs"
+        ],
+        "checks": [
+          "No fetch/XHR to openai.com/api.openai.com in src/",
+          "Reduction tests pass",
+          "Prompt template file/module exists"
+        ]
+      },
+      "depends_on": ["M2"],
+      "out_of_scope": [
+        "Image prompts",
+        "Ordering drag-and-drop"
+      ]
+    },
+    {
+      "id": "M4",
+      "epic_ids": ["E4"],
+      "name": "Sentence/phrase ordering exercise",
+      "priority": "MVP",
+      "goal": "Shuffle segments; user restores correct order with drag-and-drop and keyboard; check/reset/reshuffle.",
+      "features": [
+        "Shuffle segments for reconstruct stage",
+        "Drag-and-drop ordering",
+        "Keyboard reorder (move up/down + select)",
+        "Check order; highlight correctly placed segments",
+        "Reset and reshuffle"
+      ],
+      "user_experience": "Reconstruct stage feels like a training drill, not a static flashcard.",
+      "data_stored": [
+        "attempt records optional; at minimum last reconstruct state ephemeral OK",
+        "passage.stageProgress.reconstruct"
+      ],
+      "technical_considerations": [
+        "Prefer native HTML drag-and-drop or pointer events without heavy DnD libs unless needed",
+        "Accessibility: keyboard path required"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "No server-side grading",
+      "deliverables": [
+        "src/lib/ordering.ts + UI",
+        "Vitest for order grading/highlight logic",
+        ".agents/verify/m4-check.mjs"
+      ],
+      "acceptance": [
+        "Grading function unit-tested (correct, partial, empty)",
+        "Keyboard reorder covered by unit or DOM test",
+        "npm test && npm run build PASS",
+        "verify.auto M4 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m4-check.mjs"
+        ],
+        "checks": [
+          "Ordering grade tests pass",
+          "Reconstruct UI module exists"
+        ]
+      },
+      "depends_on": ["M2"],
+      "out_of_scope": [
+        "Hint system (M5)",
+        "Leaderboard (M6)"
+      ]
+    },
+    {
+      "id": "M5",
+      "epic_ids": ["E4"],
+      "name": "Progressive hint system + attempt metrics",
+      "priority": "MVP",
+      "goal": "Hints reveal the next correct phrase only; track hints, attempts, zero-hint completions, times; communicate goal: bring hints to 0.",
+      "features": [
+        "Hint button reveals next correct segment placement/content",
+        "Per-attempt hint counter",
+        "Persist attempts: hintsUsed, durationMs, zeroHint, completedAt",
+        "Best hint count + historical hint usage on passage",
+        "UI copy: Bring the hint count down to 0"
+      ],
+      "user_experience": "During Reconstruct/Recall, hints are a ladder to climb down, not a cheat-all button.",
+      "data_stored": [
+        "passage.attempts[]",
+        "passage.stats{bestHintCount, latestHintCount, attemptCount, zeroHintCompletions, bestTimeMs, lastPracticedAt, memorizationPercent}"
+      ],
+      "technical_considerations": [
+        "Memorization percent formula frozen in state (e.g. based on best hints vs segment count and zero-hint flag)"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "Local stats only",
+      "deliverables": [
+        "src/lib/hints.ts, src/lib/stats.ts + tests",
+        "Wired into Reconstruct/Recall",
+        ".agents/verify/m5-check.mjs"
+      ],
+      "acceptance": [
+        "Hint reveals only the next needed segment (unit tested)",
+        "Stats update on attempt completion",
+        "Goal copy present in UI source",
+        "verify.auto M5 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m5-check.mjs"
+        ],
+        "checks": [
+          "Hint/stat unit tests pass",
+          "UI contains zero-hint goal messaging"
+        ]
+      },
+      "depends_on": ["M4"],
+      "out_of_scope": [
+        "Public multiplayer leaderboard"
+      ]
+    },
+    {
+      "id": "M6",
+      "epic_ids": ["E5"],
+      "name": "Personal scoreboard",
+      "priority": "MVP",
+      "goal": "Personal leaderboard of passages with practice metrics from localStorage.",
+      "features": [
+        "Scoreboard view: passage, best/latest hints, attempts, zero-hint completions, memorization %, best time, last practiced",
+        "Sort by last practiced / mastery",
+        "Deep-link to passage practice"
+      ],
+      "user_experience": "Training dashboard showing personal bests — not a public competitive board.",
+      "data_stored": [
+        "Derived from passage.stats (no duplicate source of truth preferred)"
+      ],
+      "technical_considerations": [
+        "Read-only aggregation over repository data"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "No server leaderboard",
+      "deliverables": [
+        "Scoreboard view + tests for sort/aggregate",
+        ".agents/verify/m6-check.mjs"
+      ],
+      "acceptance": [
+        "All listed metrics render from fixture stats",
+        "npm test && npm run build PASS",
+        "verify.auto M6 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m6-check.mjs"
+        ],
+        "checks": [
+          "Scoreboard aggregator tests pass",
+          "Scoreboard view exists in src/"
+        ]
+      },
+      "depends_on": ["M5"],
+      "out_of_scope": [
+        "Accounts",
+        "Global rankings"
+      ]
+    },
+    {
+      "id": "M7",
+      "epic_ids": ["E6"],
+      "name": "Visual memory / image association",
+      "priority": "MVP",
+      "goal": "For suitable segments, build image-generation prompts; copy to ChatGPT image gen; store prompt + association locally.",
+      "features": [
+        "Visualize stage listing segments",
+        "Prompt builder per segment (main visual concept)",
+        "Copy prompt; paste optional notes/URL/data for association",
+        "Sequence of visual anchors for the passage"
+      ],
+      "user_experience": "User builds a mental storyboard (e.g. Psalm 91 imagery) without the app hosting images by default.",
+      "data_stored": [
+        "passage.visualAnchors[{segmentId, concept, imagePrompt, userNote, updatedAt}]"
+      ],
+      "technical_considerations": [
+        "Optional: allow user to paste an image URL they host; do not require binary in localStorage",
+        "Prompt template emphasizes memorable, concrete scenes"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "No image API billing; user uses their ChatGPT image credits",
+      "deliverables": [
+        "src/lib/visualPrompt.ts + Visualize UI",
+        "tests for prompt includes segment text/concept",
+        ".agents/verify/m7-check.mjs"
+      ],
+      "acceptance": [
+        "Anchors persist across reload",
+        "Prompt copy helpers exist",
+        "verify.auto M7 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m7-check.mjs"
+        ],
+        "checks": [
+          "Visual prompt tests pass",
+          "No image-generation API client in src/"
+        ]
+      },
+      "depends_on": ["M2"],
+      "out_of_scope": [
+        "Built-in image model hosting"
+      ]
+    },
+    {
+      "id": "M8",
+      "epic_ids": ["E7"],
+      "name": "Passage sharing",
+      "priority": "MVP",
+      "goal": "Share passage selection via URL/clipboard/Web Share without putting copyrighted Bible text in the URL by default.",
+      "features": [
+        "Share payload: type, title, bibleReference?, customTitle?",
+        "Optional includeText flag only for user-owned custom scripts",
+        "Copy link; Web Share API when available",
+        "Open shared link → prefill create form (reference/title); user supplies text if missing"
+      ],
+      "user_experience": "Send a friend Psalm 91 (NIV reference) or a speech title; they paste their own text and train.",
+      "data_stored": [
+        "Share encoding in URL hash/query (compact JSON or params)",
+        "No server"
+      ],
+      "technical_considerations": [
+        "URL length limits → do not default to full Bible text in links",
+        "Graceful fallback when navigator.share missing"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "No short-link service required",
+      "deliverables": [
+        "src/lib/share.ts + UI",
+        "tests for encode/decode and bible text omission default",
+        ".agents/verify/m8-check.mjs"
+      ],
+      "acceptance": [
+        "Bible reference shares omit passage body by default (tested)",
+        "Custom script can optionally embed text",
+        "verify.auto M8 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m8-check.mjs"
+        ],
+        "checks": [
+          "Share encode/decode tests pass",
+          "Default bible share has no full text field"
+        ]
+      },
+      "depends_on": ["M1"],
+      "out_of_scope": [
+        "Accounts",
+        "Server-side short URLs"
+      ]
+    },
+    {
+      "id": "M9",
+      "epic_ids": ["E8"],
+      "name": "Training path UX (Read→Master)",
+      "priority": "MVP",
+      "goal": "Unify stages into a clear training system with progress and Recall/Master modes.",
+      "features": [
+        "Stage navigator: Read → Understand → Reduce → Visualize → Reconstruct → Recall → Master",
+        "Recall: type or speak-through with reduction level none / fading cues",
+        "Master: zero-hint reconstruct + recall checklist",
+        "Psalm 91 reference starter (metadata + link; empty text until user paste)"
+      ],
+      "user_experience": "Feels like a coaching progression, not isolated mini-games.",
+      "data_stored": [
+        "passage.stageProgress for all stages",
+        "passage.masteredAt optional"
+      ],
+      "technical_considerations": [
+        "Soft gating OK (warn) rather than hard locks if it frustrates training"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "Still local-only",
+      "deliverables": [
+        "Stage shell UI",
+        "Recall + Master views",
+        "Sample reference starter",
+        ".agents/verify/m9-check.mjs"
+      ],
+      "acceptance": [
+        "All seven stages reachable in UI routing/state",
+        "Sample starter does not ship NIV body text",
+        "verify.auto M9 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm test",
+          "npm run build",
+          "node .agents/verify/m9-check.mjs"
+        ],
+        "checks": [
+          "Stage enum/nav covers all seven stages",
+          "Fixture/sample contains bibleGatewayUrl or reference without long copyrighted body"
+        ]
+      },
+      "depends_on": ["M3", "M5", "M7"],
+      "out_of_scope": [
+        "Speech recognition API requirement (optional enhancement only if easy)"
+      ]
+    },
+    {
+      "id": "M10",
+      "epic_ids": ["E8"],
+      "name": "Hardening, a11y, backup export/import",
+      "priority": "MVP",
+      "goal": "Production-ready client MVP: accessibility pass, empty states, JSON backup export/import, full verify suite green.",
+      "features": [
+        "Export/import full localStorage document",
+        "Empty states and error toasts for bad paste/import",
+        "Keyboard focus basics on primary flows",
+        "README with run instructions and ChatGPT workflow"
+      ],
+      "user_experience": "User can backup progress and recover on a new browser profile.",
+      "data_stored": [
+        "Same document; import merges or replaces with confirm"
+      ],
+      "technical_considerations": [
+        "Validate schemaVersion on import"
+      ],
+      "client_side": "Entire milestone",
+      "cost_avoidance": "No cloud backup",
+      "deliverables": [
+        "export/import UI + tests",
+        "README.md",
+        ".agents/verify/m10-check.mjs + npm run verify"
+      ],
+      "acceptance": [
+        "npm run verify runs all milestone checks and tests",
+        "Import rejects incompatible garbage JSON",
+        "README documents localStorage + ChatGPT paste flows",
+        "verify.auto M10 PASS"
+      ],
+      "verify": {
+        "mode": "AUTO",
+        "commands": [
+          "npm run verify"
+        ],
+        "checks": [
+          "Full suite green",
+          "README exists"
+        ]
+      },
+      "depends_on": ["M6", "M8", "M9"],
+      "out_of_scope": [
+        "Paid API integration",
+        "User accounts"
+      ]
+    },
+    {
+      "id": "M11",
+      "epic_ids": ["E9"],
+      "name": "Optional LLM API integration (Later)",
+      "priority": "Later",
+      "goal": "Optional user-supplied API key for reduction/visual prompts — only after MVP.",
+      "features": [
+        "Settings: API key in localStorage (never committed)",
+        "One-click generate with explicit cost warning"
+      ],
+      "user_experience": "Power users can skip copy/paste.",
+      "data_stored": ["settings.apiKey encrypted-at-rest optional"],
+      "technical_considerations": ["Key never leaves browser except to provider"],
+      "client_side": "Yes",
+      "cost_avoidance": "Off by default; warn about usage costs",
+      "deliverables": ["Deferred"],
+      "acceptance": ["Not part of MVP drain"],
+      "verify": { "mode": "HUMAN_REQUIRED", "commands": [], "checks": ["Out of MVP"] },
+      "depends_on": ["M10"],
+      "out_of_scope": ["MVP loop"]
+    },
+    {
+      "id": "M12",
+      "epic_ids": ["E9"],
+      "name": "Accounts & sync (Later)",
+      "priority": "Later",
+      "goal": "Optional sync across devices — explicitly post-MVP.",
+      "features": ["Auth", "cloud sync"],
+      "user_experience": "Cross-device progress",
+      "data_stored": ["server"],
+      "technical_considerations": ["Infra cost"],
+      "client_side": "Partial",
+      "cost_avoidance": "Deferred precisely to avoid infra cost now",
+      "deliverables": ["Deferred"],
+      "acceptance": ["Not part of MVP drain"],
+      "verify": { "mode": "HUMAN_REQUIRED", "commands": [], "checks": ["Out of MVP"] },
+      "depends_on": ["M10"],
+      "out_of_scope": ["MVP loop"]
+    }
+  ]
+}

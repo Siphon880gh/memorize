@@ -1,0 +1,91 @@
+{
+  "current_epic_id": "E1",
+  "current_milestone_id": "M1",
+  "status": "loop_running",
+  "paused": false,
+  "last_updated_iso": "2026-08-10T13:27:00Z",
+  "product": {
+    "app_name": "Memorize Script",
+    "one_liner": "Client-side training system for memorizing scriptures, speeches, and spoken scripts using progressive reduction, visuals, ordering drills, and hint-to-zero mastery.",
+    "platform": "web",
+    "planning_mode": "greenfield_mvp"
+  },
+  "completed": [
+    "M0.done"
+  ],
+  "decisions": {
+    "stack": "Vite + TypeScript + vanilla DOM",
+    "storage_key": "memorize-script.v1",
+    "schema_version": 1,
+    "ai_policy": "copy_paste_prompts_only_mvp",
+    "no_llm_api_mvp": true,
+    "no_backend_mvp": true,
+    "training_stages": [
+      "read",
+      "understand",
+      "reduce",
+      "visualize",
+      "reconstruct",
+      "recall",
+      "master"
+    ],
+    "passage_types": [
+      "bible",
+      "speech",
+      "acting_script",
+      "monologue",
+      "presentation",
+      "poem",
+      "song_spoken",
+      "custom"
+    ],
+    "reduction_levels": [
+      "full",
+      "essential",
+      "keywords",
+      "first_words",
+      "first_letters",
+      "none"
+    ],
+    "share_policy": "bible_reference_without_body_by_default",
+    "sample_reference": {
+      "title": "Psalm 91",
+      "bibleReference": "Psalm 91",
+      "versionHint": "NIV",
+      "bibleGatewayUrl": "https://www.biblegateway.com/passage/?search=Psalm%2091&version=NIV",
+      "bundledText": null
+    },
+    "memorization_percent_formula": "clamp(0..100) = round( (zeroHintBonus*40) + (hintFactor*40) + (stageFactor*20) ) where zeroHintBonus=1 if any zero-hint completion else 0; hintFactor = 1 - min(bestHintCount, segmentCount)/max(segmentCount,1); stageFactor = completedStages/7",
+    "loop_authorized": true,
+    "auto_commit": true,
+    "auto_push": false,
+    "error_fix_budget_rounds": 5,
+    "confirmed_decisions": [
+      "MVP is fully client-side with localStorage",
+      "No ChatGPT/OpenAI API in MVP; prompts are copy/paste",
+      "Do not put copyrighted Bible translation bodies into share URLs by default",
+      "Personal scoreboard only (not public)",
+      "Loop drains mvp_milestone_ids; Later M11/M12 excluded until human asks",
+      "M0 frozen: DATA_MODEL.md + m0-check PASS"
+    ],
+    "assumptions_pending_confirmation": []
+  },
+  "contracts": {
+    "status": "frozen",
+    "frozen_at_iso": "2026-08-10T13:27:00Z",
+    "data_model_doc": "docs/DATA_MODEL.md"
+  },
+  "loop": {
+    "tick": 1,
+    "error_round": 0,
+    "last_verify": "PASS",
+    "failed_milestone_id": null,
+    "handoff_file": null,
+    "skill_used": null
+  },
+  "notes": [
+    "Milestones created 2026-08-10. Begin loop at M0.",
+    "Stop only for HUMAN_REQUIRED verification or 5 failed fix rounds.",
+    "M0 PASS — advancing to M1."
+  ]
+}
