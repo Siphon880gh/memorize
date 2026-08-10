@@ -6,6 +6,7 @@ export type LibraryCallbacks = {
   onOpenPassage: (id: string) => void;
   onScoreboard?: () => void;
   onPsalm91Starter?: () => void;
+  onDailyBreadStarter?: () => void;
 };
 
 function typeLabel(t: PassageType): string {
@@ -28,6 +29,7 @@ export function renderLibrary(
       <div class="row">
         <button class="btn secondary" type="button" id="goto-scoreboard">Scoreboard</button>
         <button class="btn secondary" type="button" id="add-psalm91">Psalm 91 starter</button>
+        <button class="btn secondary" type="button" id="add-daily-bread">Daily Bread Prayer</button>
         <button class="btn secondary" type="button" id="export-data">Export</button>
         <label class="btn secondary" style="cursor:pointer">Import<input id="import-data" type="file" accept="application/json,.json" hidden /></label>
       </div>
@@ -100,6 +102,9 @@ export function renderLibrary(
   });
   root.querySelector("#add-psalm91")?.addEventListener("click", () => {
     callbacks.onPsalm91Starter?.();
+  });
+  root.querySelector("#add-daily-bread")?.addEventListener("click", () => {
+    callbacks.onDailyBreadStarter?.();
   });
   root.querySelector("#export-data")?.addEventListener("click", () => {
     downloadText("memorize-script-backup.json", exportDocument(repo.load()));

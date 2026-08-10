@@ -1,4 +1,5 @@
 import "./styles.css";
+import { DAILY_BREAD_PRAYER_STARTER } from "./data/sampleDailyBread";
 import { PSALM_91_STARTER } from "./data/samplePsalm91";
 import { decodeSharePayload } from "./lib/share";
 import { PassageRepository } from "./storage/repository";
@@ -41,6 +42,11 @@ function showLibrary(prefill?: {
     },
     onPsalm91Starter: () => {
       const created = repo.upsertPassage({ ...PSALM_91_STARTER });
+      history.replaceState(null, "", `#passage/${created.id}/read`);
+      mount();
+    },
+    onDailyBreadStarter: () => {
+      const created = repo.upsertPassage({ ...DAILY_BREAD_PRAYER_STARTER });
       history.replaceState(null, "", `#passage/${created.id}/read`);
       mount();
     },

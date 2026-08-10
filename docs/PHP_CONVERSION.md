@@ -37,14 +37,14 @@ AGENTS_LOOP-Convert-PHP.md
 
 ## Feature parity checklist
 
-- [ ] Library CRUD
-- [ ] Psalm 91 starter (empty text + reference)
-- [ ] Daily Bread Prayer starter (KJV text)
-- [ ] Stages: read, understand, reduce, visualize, reconstruct, recall, master
-- [ ] Progressive hints + stats + scoreboard
-- [ ] Share (bible omits body)
-- [ ] Export / import backup
-- [ ] Hash routes: `#passage/:id/:stage`, `#scoreboard`, `#share/...`
+- [x] Library CRUD
+- [x] Psalm 91 starter (empty text + reference)
+- [x] Daily Bread Prayer starter (KJV text)
+- [x] Stages: read, understand, reduce, visualize, reconstruct, recall, master
+- [x] Progressive hints + stats + scoreboard
+- [x] Share (bible omits body)
+- [x] Export / import backup
+- [x] Hash routes: `#passage/:id/:stage`, `#scoreboard`, `#share/...`
 
 ## Agent track
 

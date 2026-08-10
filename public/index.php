@@ -1,0 +1,22 @@
+<?php
+declare(strict_types=1);
+$title = 'Memorize Script';
+?><!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/app.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="/assets/js/app.js" defer></script>
+  </body>
+</html>

@@ -28,3 +28,18 @@ Status legend: `planned` · `in_progress` · `done` · `later`
 All of `mvp_milestone_ids` in `.agents/milestones.json` are `done` in `.agents/state.json`.
 
 **MVP status: complete** (`status: mvp_complete`).
+
+## PHP conversion (P0–P10)
+
+| Epic | Name | Status | Milestones |
+|------|------|--------|------------|
+| E-PHP0 | Freeze PHP decisions | done | P0 |
+| E-PHP1 | Shell + repository | done | P1, P2 |
+| E-PHP2 | Library + Read/Understand | done | P3, P4 |
+| E-PHP3 | Reduce + Reconstruct/hints | done | P5, P6 |
+| E-PHP4 | Visual / scoreboard / share / master path | done | P7, P8 |
+| E-PHP5 | Backup, docs, PHP canonical | done | P9, P10 |
+
+Track: `.agents/milestones-php.json` · Loop: `AGENTS_LOOP-Convert-PHP.md` · State: `php_conversion.status = php_complete`
+
+Run: `php -S localhost:8080 -t public`

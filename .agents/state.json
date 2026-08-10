@@ -103,14 +103,27 @@
     "M4+M5 PASS — advancing to M6.",
     "M6-M8 PASS — advancing to M9.",
     "M9+M10 PASS — MVP drained. Later M11/M12 await human request.",
-    "PHP conversion track opened — AGENTS_LOOP-Convert-PHP.md"
+    "PHP conversion track opened — AGENTS_LOOP-Convert-PHP.md",
+    "PHP conversion drained — php_complete via AGENTS_LOOP-Convert-PHP.md"
   ],
   "php_conversion": {
-    "status": "loop_running",
-    "paused": false,
-    "current_milestone_id": "P0",
-    "completed": [],
-    "last_updated_iso": "2026-08-10T13:50:05.024Z",
+    "status": "php_complete",
+    "paused": true,
+    "current_milestone_id": null,
+    "completed": [
+      "P0.done",
+      "P1.done",
+      "P2.done",
+      "P3.done",
+      "P4.done",
+      "P5.done",
+      "P6.done",
+      "P7.done",
+      "P8.done",
+      "P9.done",
+      "P10.done"
+    ],
+    "last_updated_iso": "2026-08-10T13:53:33.308Z",
     "decisions": {
       "stack": "PHP built-in server + vanilla JS ES modules",
       "web_root": "public",
@@ -125,9 +138,9 @@
       "milestones_file": ".agents/milestones-php.json"
     },
     "loop": {
-      "tick": 0,
+      "tick": 11,
       "error_round": 0,
-      "last_verify": null,
+      "last_verify": "PASS",
       "failed_milestone_id": null,
       "handoff_file": null
     }
