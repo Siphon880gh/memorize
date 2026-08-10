@@ -132,8 +132,8 @@ export function renderTraining(
   const continueRow = (from: TrainingStage, label: string) => {
     const n = nextStage(from);
     if (!n) return "";
-    return `<div class="row" style="margin-top:1rem">
-      <button class="btn" type="button" id="continue-next">${esc(label)}</button>
+    return `<div class="row stage-next-row">
+      <button class="btn stage-next" type="button" id="continue-next">${esc(label)}</button>
     </div>`;
   };
 
@@ -249,13 +249,13 @@ function renderRead(
     ${
       empty
         ? `<p class="empty">This passage has no text yet. Go to <strong>Library</strong>, edit it, and paste the wording you want to memorize.</p>
-           <div class="row"><button class="btn" type="button" id="mark-read" disabled>Mark Read complete → Understand</button></div>`
+           <div class="row stage-next-row"><button class="btn stage-next" type="button" id="mark-read" disabled>Mark Read complete → Understand</button></div>`
         : `<p class="empty">Read the full passage with segment markers. Absorb cadence before reducing.</p>
            <ol class="segment-list">
              ${passage.segments.map((s) => `<li><span class="seg-idx">${s.index + 1}</span> ${esc(s.text)}</li>`).join("")}
            </ol>
-           <div class="row">
-             <button class="btn" type="button" id="mark-read">Mark Read complete → Understand</button>
+           <div class="row stage-next-row">
+             <button class="btn stage-next" type="button" id="mark-read">Mark Read complete → Understand</button>
            </div>`
     }
   `;
@@ -287,8 +287,8 @@ function renderUnderstand(
         )
         .join("")}
     </div>
-    <div class="row" style="margin-top:1rem">
-      <button class="btn" type="button" id="save-notes">Save &amp; complete Understand</button>
+    <div class="row stage-next-row">
+      <button class="btn ${isComplete(passage, "understand") ? "secondary" : "stage-next"}" type="button" id="save-notes">${isComplete(passage, "understand") ? "Save notes" : "Save &amp; complete Understand"}</button>
       <span class="toast" id="notes-toast" hidden></span>
     </div>
   `;
@@ -358,7 +358,7 @@ function renderReconstruct(
           .join("")}
       </ul>
       <div class="row">
-        <button class="btn" type="button" id="check-order">Check order</button>
+        <button class="btn ${isComplete(passage, "reconstruct") ? "secondary" : ""}" type="button" id="check-order">Check order</button>
         <button class="btn secondary" type="button" id="hint-btn">Hint (next phrase)</button>
         <button class="btn secondary" type="button" id="reshuffle">Reshuffle</button>
         <button class="btn secondary" type="button" id="reset-order">Reset attempt</button>
@@ -366,7 +366,7 @@ function renderReconstruct(
       <p class="toast" id="order-toast">${esc(message)}</p>
       ${
         isComplete(passage, "reconstruct")
-          ? `<div class="row" style="margin-top:1rem"><button class="btn" type="button" id="continue-recall">Continue → Recall</button></div>`
+          ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="continue-recall">Continue → Recall</button></div>`
           : ""
       }
     `;
@@ -510,12 +510,12 @@ function renderRecall(
       ${reveal ? `<pre class="cue-pre original">${esc(passage.text)}</pre>` : ""}
       <div class="row">
         <button class="btn secondary" type="button" id="recall-reveal">${reveal ? "Hide original" : "Reveal original (counts as hint)"}</button>
-        <button class="btn" type="button" id="recall-done">Check recall</button>
+        <button class="btn ${isComplete(passage, "recall") ? "secondary" : ""}" type="button" id="recall-done">Check recall</button>
       </div>
       <p class="toast" id="recall-toast" hidden></p>
       ${
         isComplete(passage, "recall")
-          ? `<div class="row" style="margin-top:1rem"><button class="btn" type="button" id="continue-master">Continue → Master</button></div>`
+          ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="continue-master">Continue → Master</button></div>`
           : ""
       }
     `;
@@ -595,7 +595,7 @@ function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Pass
       <li><span class="seg-idx">${zeroHint ? "✓" : "·"}</span> At least one correct zero-hint completion</li>
     </ul>
     <div class="row">
-      <button class="btn" type="button" id="mark-master" ${ready ? "" : "disabled"}>Mark mastered</button>
+      <button class="btn stage-next" type="button" id="mark-master" ${ready ? "" : "disabled"}>Mark mastered</button>
       <span class="toast" id="master-toast">${ready ? "Ready to mark mastery." : "Finish locked stages and earn a correct zero-hint win first."}</span>
     </div>
   `;
@@ -698,10 +698,11 @@ function renderVisualize(
               </label>
               <div class="row prompt-actions">
                 <button class="btn secondary" type="button" data-copy="${seg.id}">Copy image prompt</button>
-                <a class="btn" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
+                <a class="btn secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
               </div>
               <label>
-                <span class="label-row">Your note / image URL <span class="optional-tag">(optional)</span>
+                <span class="label-row">
+                  <span class="label-text">Your note / image URL <span class="optional-tag">(optional)</span></span>
                   <button type="button" class="help-icon" data-help-note="${seg.id}" aria-label="What goes in note or image URL?">?</button>
                 </span>
                 <input data-note="${seg.id}" placeholder="Short note or https://… image URL" value="${esc(anchor?.userNote || anchor?.imageUrl || "")}" />
@@ -713,8 +714,8 @@ function renderVisualize(
           })
           .join("")}
       </div>
-      <div class="row" style="margin-top:1rem">
-        <button class="btn" type="button" id="mark-visualize">Mark Visualize complete</button>
+      <div class="row stage-next-row">
+        <button class="btn ${isComplete(passage, "visualize") ? "secondary" : "stage-next"}" type="button" id="mark-visualize">${isComplete(passage, "visualize") ? "Visualize completed" : "Mark Visualize complete"}</button>
         <span class="toast" id="viz-toast" hidden></span>
       </div>
     `;
@@ -811,13 +812,21 @@ function renderVisualize(
   paint();
 }
 
+function initialReduceLevel(passage: Passage): ReductionLevel {
+  if (passage.reductions.keywords?.trim()) return "keywords";
+  if (passage.reductions.essential?.trim()) return "essential";
+  const last = passage.reductionMeta?.lastLevel;
+  if (last && REDUCTION_LEVELS.some((l) => l.id === last)) return last;
+  return "first_words";
+}
+
 function renderReduce(
   panel: HTMLElement,
   repo: PassageRepository,
   passage: Passage,
   onChanged: (p: Passage) => void,
 ): void {
-  let level: ReductionLevel = "first_words";
+  let level: ReductionLevel = initialReduceLevel(passage);
   let reveal = false;
 
   const canComplete = (): { ok: boolean; reason: string } => {
@@ -834,48 +843,57 @@ function renderReduce(
     return { ok: true, reason: "" };
   };
 
-  const paint = () => {
+  const paint = (notice?: { msg: string; kind?: "ok" | "warn" }) => {
     const cue = localReduction(level, passage.text, passage.reductions[level]);
     const meta = REDUCTION_LEVELS.find((l) => l.id === level)!;
     const pastedSaved = Boolean(passage.reductions[level]?.trim());
     const needsPaste = meta.needsPaste;
     const pasteMissing = needsPaste && !pastedSaved;
     const pasteMode = level === "keywords" ? "keywords" : "essential";
+    const savedAt = pastedSaved ? passage.reductionMeta?.updatedAt : undefined;
 
     panel.innerHTML = `
       <h2>Reduce</h2>
       <p class="empty">Practice from fuller cues down to none. Complete the stage only after using a <strong>reduced</strong> cue level.</p>
       <label>Cue level
         <select id="level">
-          ${REDUCTION_LEVELS.map((l) => `<option value="${l.id}" ${l.id === level ? "selected" : ""}>${l.label}</option>`).join("")}
+          ${REDUCTION_LEVELS.map((l) => {
+            const hasSaved = l.needsPaste && Boolean(passage.reductions[l.id]?.trim());
+            return `<option value="${l.id}" ${l.id === level ? "selected" : ""}>${l.label}${hasSaved ? " · saved" : ""}</option>`;
+          }).join("")}
         </select>
       </label>
       ${
         needsPaste
           ? `<section class="reduce-help ${pasteMissing ? "is-missing" : "is-ready"}" id="chatgpt-help" aria-live="polite">
               <div class="reduce-help-head">
-                <strong>${pasteMissing ? "ChatGPT reduction required" : "ChatGPT reduction saved"}</strong>
-                <span class="req-badge ${pasteMissing ? "missing" : "ok"}">${pasteMissing ? "Missing" : "Ready"}</span>
+                <strong>${pasteMissing ? "ChatGPT reduction required" : "ChatGPT reduction saved locally"}</strong>
+                <span class="req-badge ${pasteMissing ? "missing" : "ok"}">${pasteMissing ? "Missing" : "Saved"}</span>
               </div>
-              <ol class="reduce-steps">
-                <li>Copy the prompt below</li>
-                <li>Open <a class="chatgpt-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT</a>, paste it, and generate</li>
-                <li>Copy ChatGPT’s answer into the required field, then save</li>
-              </ol>
-              <p class="empty reduce-help-alt">Or switch cue level to <strong>First words</strong>, <strong>First letters</strong>, or <strong>No hints</strong> (no ChatGPT needed).</p>
+              ${
+                pastedSaved
+                  ? `<p class="empty reduce-help-alt">This reduction stays with the passage until you reset it.${savedAt ? ` Last saved ${esc(new Date(savedAt).toLocaleString())}.` : ""}</p>`
+                  : `<ol class="reduce-steps">
+              <li>Copy the prompt below</li>
+              <li>Open <a class="chatgpt-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT</a>, paste it, and generate</li>
+              <li>Copy ChatGPT’s answer into the required field, then save</li>
+            </ol>
+            <p class="empty reduce-help-alt">Or switch cue level to <strong>First words</strong>, <strong>First letters</strong>, or <strong>No hints</strong> (no ChatGPT needed).</p>`
+              }
               <label>1. ChatGPT prompt
                 <textarea id="ai-prompt" readonly>${esc(buildReductionPrompt(pasteMode, passage.title, passage.text))}</textarea>
               </label>
               <div class="row">
                 <button class="btn secondary" type="button" id="copy-prompt">Copy prompt</button>
-                <a class="btn" id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
+                <a class="btn secondary" id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
               </div>
               <label class="${pasteMissing ? "field-missing" : "field-ready"}">
                 <span class="label-row">2. Paste ChatGPT reduction <span class="req-badge ${pasteMissing ? "missing" : "ok"}">${pasteMissing ? "Required — missing" : "Saved"}</span></span>
                 <textarea id="paste-reduction" ${pasteMissing ? 'aria-invalid="true" aria-required="true"' : ""} placeholder="Paste ChatGPT’s reduced text here…">${esc(passage.reductions[level] ?? "")}</textarea>
               </label>
               <div class="row">
-                <button class="btn" type="button" id="save-reduction">Save pasted reduction</button>
+                <button class="btn" type="button" id="save-reduction">${pastedSaved ? "Update saved reduction" : "Save pasted reduction"}</button>
+                ${pastedSaved ? `<button class="btn danger" type="button" id="reset-reduction">Reset saved reduction</button>` : ""}
               </div>
             </section>`
           : ""
@@ -885,9 +903,9 @@ function renderReduce(
         <pre class="cue-pre">${esc(cue || "(no hints — recall from memory)")}</pre>
         ${reveal ? `<pre class="cue-pre original">${esc(passage.text)}</pre>` : ""}
       </div>
-      <div class="row" style="margin-top:1rem">
+      <div class="row stage-next-row">
         <button class="btn secondary" type="button" id="toggle-reveal">${reveal ? "Hide original" : "Reveal original"}</button>
-        <button class="btn" type="button" id="mark-reduce" ${pasteMissing ? "disabled" : ""} title="${pasteMissing ? "Save a ChatGPT reduction first" : "Mark Reduce practiced"}">Mark Reduce practiced</button>
+        <button class="btn ${isComplete(passage, "reduce") ? "secondary" : "stage-next"}" type="button" id="mark-reduce" ${pasteMissing ? "disabled" : ""} title="${pasteMissing ? "Save a ChatGPT reduction first" : "Mark Reduce practiced"}">${isComplete(passage, "reduce") ? "Reduce completed" : "Mark Reduce practiced"}</button>
         <span class="toast" id="reduce-toast" hidden></span>
       </div>
     `;
@@ -899,6 +917,7 @@ function renderReduce(
       el.classList.toggle("warn", kind === "warn");
       el.textContent = msg;
     };
+    if (notice) toast(notice.msg, notice.kind ?? "ok");
 
     panel.querySelector("#level")?.addEventListener("change", (e) => {
       level = (e.target as HTMLSelectElement).value as ReductionLevel;
@@ -939,13 +958,30 @@ function renderReduce(
       const updated: Passage = {
         ...passage,
         reductions: { ...passage.reductions, [level]: pasted },
-        reductionMeta: { promptUsed: prompt, updatedAt: now },
+        reductionMeta: { promptUsed: prompt, updatedAt: now, lastLevel: level },
         updatedAt: now,
       };
       savePassage(repo, updated);
       Object.assign(passage, updated);
-      toast("Reduction saved — you can practice and mark Reduce complete.");
-      paint();
+      onChanged(updated);
+    });
+    panel.querySelector("#reset-reduction")?.addEventListener("click", () => {
+      const reductions = { ...passage.reductions };
+      delete reductions[level];
+      const now = new Date().toISOString();
+      const updated: Passage = {
+        ...passage,
+        reductions,
+        reductionMeta: {
+          ...passage.reductionMeta,
+          updatedAt: now,
+          lastLevel: level,
+        },
+        updatedAt: now,
+      };
+      savePassage(repo, updated);
+      Object.assign(passage, updated);
+      onChanged(updated);
     });
   };
 

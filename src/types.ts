@@ -73,7 +73,11 @@ export type Passage = {
   segments: Segment[];
   segmentNotes: Record<string, string>;
   reductions: Partial<Record<ReductionLevel, string>>;
-  reductionMeta?: { promptUsed?: string; updatedAt?: string };
+  reductionMeta?: {
+    promptUsed?: string;
+    updatedAt?: string;
+    lastLevel?: ReductionLevel;
+  };
   visualAnchors: VisualAnchor[];
   stageProgress: Partial<
     Record<TrainingStage, { completed: boolean; updatedAt?: string }>
