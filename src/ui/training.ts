@@ -2,8 +2,10 @@ import {
   applyHint,
   gradeOrder,
   moveItem,
+  reconstructCardLabel,
   shuffleItems,
   toOrderItems,
+  type ReconstructCueMode,
 } from "../lib/ordering";
 import { gradeRecall } from "../lib/recallGrade";
 import {
@@ -12,10 +14,10 @@ import {
   localReduction,
 } from "../lib/reduction";
 import { ensureSegments } from "../lib/segment";
-import { recordAttempt } from "../lib/stats";
+import { hintKindLabel, recordAttempt, resetMastery } from "../lib/stats";
 import { buildImagePrompt, inferConcept } from "../lib/visualPrompt";
 import { PassageRepository } from "../storage/repository";
-import type { Passage, ReductionLevel, TrainingStage, VisualAnchor } from "../types";
+import type { HintEvent, Passage, ReductionLevel, TrainingStage, VisualAnchor } from "../types";
 import { mountShareControls } from "./sharePanel";
 
 export type TrainingCallbacks = {
@@ -199,7 +201,10 @@ export function renderTraining(
       renderTraining(root, repo, passageId, callbacks, "recall");
     });
   } else if (activeStage === "master") {
-    renderMaster(panel, repo, passage);
+    renderMaster(panel, repo, passage, (updated) => {
+      Object.assign(passage, updated);
+      go("read");
+    });
   }
 }
 
@@ -332,34 +337,51 @@ function renderReconstruct(
   let order = shuffleItems(correct);
   let selected = 0;
   let hintsUsed = 0;
+  const hintEvents: HintEvent[] = [];
   let checked: boolean[] | null = null;
-  let message = "Bring the hint count down to 0.";
+  let cueMode: ReconstructCueMode = "first_word";
+  let message = "Drag the cards into the correct order, then check.";
   const startedAt = Date.now();
 
   const paint = () => {
     panel.innerHTML = `
       <h2>Reconstruct</h2>
-      <p class="empty"><strong>Bring the hint count down to 0.</strong> Drag segments, or use keyboard: ↑/↓ move.</p>
+      <p class="empty"><strong>Put the passage back in order.</strong> The cards are shuffled — drag them (or use ↑/↓) until the sequence matches the original. A card shows a cue until it sits in the right slot; then it expands to the full segment. Hint clicks and choosing <strong>Full segment</strong> each count as hints.</p>
+      <label>Card cue while out of place
+        <select id="reconstruct-cue">
+          <option value="first_word" ${cueMode === "first_word" ? "selected" : ""}>First word</option>
+          <option value="keywords" ${cueMode === "keywords" ? "selected" : ""}>Keywords</option>
+          <option value="full" ${cueMode === "full" ? "selected" : ""}>Full segment (counts as hint)</option>
+        </select>
+      </label>
       <p class="stats-line">Hints this attempt: <strong id="hint-count">${hintsUsed}</strong> · Best: <strong>${passage.stats.bestHintCount ?? "—"}</strong> · Zero-hint wins: <strong>${passage.stats.zeroHintCompletions}</strong></p>
-      <ul class="order-list" id="order-list">
+      <p class="order-legend"><span class="order-legend-cue">Cue</span> = still rearranging · <span class="order-legend-full">Full line</span> = correct place</p>
+      <ul class="order-list" id="order-list" aria-label="Shuffled segments — rearrange into the correct order">
         ${order
           .map((item, i) => {
+            const inPlace = item.id === correctIds[i];
+            const label = reconstructCardLabel(item.text, cueMode, inPlace);
             const cls = [
               selected === i ? "selected" : "",
+              inPlace ? "in-place" : "out-of-place",
+              label.revealed ? "revealed" : "cue-only",
               checked ? (checked[i] ? "correct" : "wrong") : "",
             ]
               .filter(Boolean)
               .join(" ");
             return `<li class="order-item ${cls}" draggable="true" tabindex="0" data-index="${i}" data-id="${item.id}">
-              <span class="seg-idx">${i + 1}</span>
-              <span>${esc(item.text)}</span>
+              <span class="seg-idx" title="Current slot ${i + 1}">${i + 1}</span>
+              <span class="order-card-body">
+                <span class="order-card-meta">${label.revealed ? "Full segment · slot correct" : "Cue · rearrange"}</span>
+                <span class="order-card-text">${esc(label.text)}</span>
+              </span>
             </li>`;
           })
           .join("")}
       </ul>
       <div class="row">
         <button class="btn ${isComplete(passage, "reconstruct") ? "secondary" : ""}" type="button" id="check-order">Check order</button>
-        <button class="btn secondary" type="button" id="hint-btn">Hint (next phrase)</button>
+        <button class="btn secondary" type="button" id="hint-btn">Hint (place next segment)</button>
         <button class="btn secondary" type="button" id="reshuffle">Reshuffle</button>
         <button class="btn secondary" type="button" id="reset-order">Reset attempt</button>
       </div>
@@ -370,6 +392,24 @@ function renderReconstruct(
           : ""
       }
     `;
+
+    panel.querySelector("#reconstruct-cue")?.addEventListener("change", (e) => {
+      const next = (e.target as HTMLSelectElement).value as ReconstructCueMode;
+      if (
+        next === "full" &&
+        cueMode !== "full" &&
+        !hintEvents.some((h) => h.kind === "full_cue")
+      ) {
+        hintsUsed += 1;
+        hintEvents.push({
+          kind: "full_cue",
+          at: new Date().toISOString(),
+          detail: "Switched card cue to Full segment",
+        });
+      }
+      cueMode = next;
+      paint();
+    });
 
     let dragFrom: number | null = null;
     panel.querySelectorAll<HTMLElement>(".order-item").forEach((el) => {
@@ -417,6 +457,7 @@ function renderReconstruct(
         let updated = recordAttempt(passage, {
           stage: "reconstruct",
           hintsUsed,
+          hintEvents: hintEvents.slice(),
           durationMs: Date.now() - startedAt,
           success: true,
         });
@@ -431,12 +472,12 @@ function renderReconstruct(
         Object.assign(passage, updated);
         message =
           hintsUsed === 0
-            ? "Perfect — zero hints!"
-            : `Correct with ${hintsUsed} hint(s). Aim for 0 next time.`;
+            ? "Perfect order — zero hints!"
+            : `Correct order with ${hintsUsed} hint(s). Aim for 0 next time.`;
         onDone(updated);
         return;
       }
-      message = "Not yet — correct phrases are highlighted.";
+      message = "Not in order yet — green slots are right; keep rearranging the rest.";
       paint();
     });
 
@@ -446,30 +487,37 @@ function renderReconstruct(
         correctIds,
       );
       if (result.hintedIndex === -1) {
-        message = "Nothing left to hint.";
+        message = "Everything is already in order.";
         paint();
         return;
       }
       hintsUsed += 1;
+      hintEvents.push({
+        kind: "place_hint",
+        at: new Date().toISOString(),
+        detail: `Hint button placed the correct segment in slot ${result.hintedIndex + 1}`,
+      });
       order = result.ids.map((id) => correct.find((c) => c.id === id)!);
       checked = null;
       selected = result.hintedIndex;
-      message = `Hint placed phrase #${result.hintedIndex + 1}. Bring the hint count down to 0.`;
+      message = `Hint: placed the correct segment in slot ${result.hintedIndex + 1}. Keep rearranging.`;
       paint();
     });
 
     panel.querySelector("#reshuffle")?.addEventListener("click", () => {
       order = shuffleItems(correct);
       checked = null;
-      message = "Reshuffled. Bring the hint count down to 0.";
+      message = "Reshuffled — rearrange the cards into the correct order.";
       paint();
     });
 
     panel.querySelector("#reset-order")?.addEventListener("click", () => {
       order = shuffleItems(correct);
       hintsUsed = 0;
+      hintEvents.length = 0;
       checked = null;
-      message = "Attempt reset. Bring the hint count down to 0.";
+      cueMode = "first_word";
+      message = "Attempt reset — rearrange from scratch.";
       paint();
     });
 
@@ -492,12 +540,13 @@ function renderRecall(
   let reveal = false;
   const startedAt = Date.now();
   let hintsUsed = 0;
+  const hintEvents: HintEvent[] = [];
 
   const paint = () => {
     const cue = localReduction(level, passage.text, passage.reductions[level]);
     panel.innerHTML = `
       <h2>Recall</h2>
-      <p class="empty">Type the passage from memory. Your answer is checked against the original — close isn’t enough if key words are missing.</p>
+      <p class="empty">Type the passage from memory. Checking is <strong>case-insensitive</strong> and <strong>lax about punctuation</strong> — but key words still need to be there. Revealing the original counts as a hint.</p>
       <label>Cue level
         <select id="recall-level">
           ${REDUCTION_LEVELS.map((l) => `<option value="${l.id}" ${l.id === level ? "selected" : ""}>${l.label}</option>`).join("")}
@@ -512,6 +561,7 @@ function renderRecall(
         <button class="btn secondary" type="button" id="recall-reveal">${reveal ? "Hide original" : "Reveal original (counts as hint)"}</button>
         <button class="btn ${isComplete(passage, "recall") ? "secondary" : ""}" type="button" id="recall-done">Check recall</button>
       </div>
+      <p class="stats-line">Hints this attempt: <strong>${hintsUsed}</strong></p>
       <p class="toast" id="recall-toast" hidden></p>
       ${
         isComplete(passage, "recall")
@@ -524,7 +574,14 @@ function renderRecall(
       paint();
     });
     panel.querySelector("#recall-reveal")?.addEventListener("click", () => {
-      if (!reveal) hintsUsed += 1;
+      if (!reveal) {
+        hintsUsed += 1;
+        hintEvents.push({
+          kind: "reveal_original",
+          at: new Date().toISOString(),
+          detail: "Revealed the full original passage",
+        });
+      }
       reveal = !reveal;
       paint();
     });
@@ -542,6 +599,7 @@ function renderRecall(
       let updated = recordAttempt(passage, {
         stage: "recall",
         hintsUsed,
+        hintEvents: hintEvents.slice(),
         durationMs: Date.now() - startedAt,
         success: grade.ok,
       });
@@ -573,7 +631,12 @@ function renderRecall(
   paint();
 }
 
-function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Passage): void {
+function renderMaster(
+  panel: HTMLElement,
+  repo: PassageRepository,
+  passage: Passage,
+  onResetToRead: (p: Passage) => void,
+): void {
   const checklist = STAGE_ORDER.map((s) => ({
     id: s,
     done: isComplete(passage, s) || (s === "master" && Boolean(passage.masteredAt)),
@@ -581,10 +644,16 @@ function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Pass
   const zeroHint = passage.stats.zeroHintCompletions > 0;
   const ready =
     checklist.filter((c) => c.id !== "master").every((c) => c.done) && zeroHint;
+  const scoredAttempts = passage.attempts.filter((a) => a.stage === "reconstruct" || a.stage === "recall");
 
   panel.innerHTML = `
     <h2>Master</h2>
-    <p class="empty">Mastery means every stage is truly completed and you have a <strong>correct</strong> zero-hint reconstruct or recall win.</p>
+    <p class="empty">Mastery means every stage is truly completed and you have a <strong>correct zero-hint</strong> Reconstruct or Recall win. Hints include <strong>hint buttons you click</strong> and <strong>revealing the full segment/original</strong> (including Full-segment cue on Reconstruct).</p>
+    <p class="stats-line">
+      Zero-hint wins: <strong>${passage.stats.zeroHintCompletions}</strong>
+      · Best hints on a win: <strong>${passage.stats.bestHintCount ?? "—"}</strong>
+      · <button type="button" class="linkish" id="hint-details">Details</button>
+    </p>
     <ul class="segment-list">
       ${checklist
         .map(
@@ -594,11 +663,53 @@ function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Pass
         .join("")}
       <li><span class="seg-idx">${zeroHint ? "✓" : "·"}</span> At least one correct zero-hint completion</li>
     </ul>
-    <div class="row">
+    <div class="row stage-next-row">
       <button class="btn stage-next" type="button" id="mark-master" ${ready ? "" : "disabled"}>Mark mastered</button>
-      <span class="toast" id="master-toast">${ready ? "Ready to mark mastery." : "Finish locked stages and earn a correct zero-hint win first."}</span>
+      <button class="btn danger" type="button" id="reset-mastery">Reset mastery</button>
     </div>
+    <p class="toast" id="master-toast">${
+      passage.masteredAt
+        ? "Mastered. Reset anytime to train again from Read."
+        : ready
+          ? "Ready to mark mastery."
+          : "Finish locked stages and earn a correct zero-hint win first."
+    }</p>
   `;
+
+  panel.querySelector("#hint-details")?.addEventListener("click", () => {
+    const body =
+      scoredAttempts.length === 0
+        ? `<p>No Reconstruct or Recall attempts recorded yet.</p>
+           <p>Hints count when you click a hint button, reveal the original text, or use the Full-segment cue while rearranging.</p>`
+        : `<p>Each attempt below lists what counted toward its hint total.</p>
+           <ul class="hint-attempt-list">
+             ${scoredAttempts
+               .slice()
+               .reverse()
+               .map((a) => {
+                 const when = new Date(a.completedAt).toLocaleString();
+                 const events = a.hintEvents?.length
+                   ? `<ul>${a.hintEvents
+                       .map(
+                         (h) =>
+                           `<li><strong>${esc(hintKindLabel(h.kind))}</strong> — ${esc(h.detail)} <span class="empty">(${esc(new Date(h.at).toLocaleString())})</span></li>`,
+                       )
+                       .join("")}</ul>`
+                   : a.hintsUsed === 0
+                     ? `<p class="empty">No hints on this attempt.</p>`
+                     : `<p class="empty">${a.hintsUsed} hint(s) (details unavailable for this older attempt).</p>`;
+                 return `<li class="hint-attempt">
+                   <strong>${esc(a.stage)}</strong>
+                   · ${a.success ? "success" : "miss"}
+                   · ${a.hintsUsed} hint(s)${a.zeroHint ? " · zero-hint win" : ""}
+                   · <span class="empty">${esc(when)}</span>
+                   ${events}
+                 </li>`;
+               })
+               .join("")}
+           </ul>`;
+    openHelpModal("Hint details", body);
+  });
 
   panel.querySelector("#mark-master")?.addEventListener("click", () => {
     if (!ready) return;
@@ -620,6 +731,30 @@ function renderMaster(panel: HTMLElement, repo: PassageRepository, passage: Pass
     Object.assign(passage, updated);
     const toast = panel.querySelector<HTMLElement>("#master-toast");
     if (toast) toast.textContent = "Mastered. Keep drilling to stay sharp.";
+    panel.querySelector<HTMLButtonElement>("#mark-master")!.disabled = true;
+  });
+
+  panel.querySelector("#reset-mastery")?.addEventListener("click", () => {
+    openHelpModal(
+      "Reset mastery?",
+      `<p>This clears mastery, sets hints/wins back to <strong>0</strong>, unlocks stages from the start, and returns you to <strong>Read</strong>.</p>
+       <p>Choose whether to keep study content you filled in (notes, ChatGPT reductions, visual anchors / image URLs).</p>
+       <div class="row modal-actions">
+         <button type="button" class="btn" id="reset-keep">Keep filled info</button>
+         <button type="button" class="btn danger" id="reset-clear">Reset filled info too</button>
+         <button type="button" class="btn secondary" id="reset-cancel">Cancel</button>
+       </div>`,
+    );
+    const modal = document.getElementById("app-help-modal");
+    const finish = (mode: "keep_content" | "clear_content") => {
+      const updated = resetMastery(passage, mode);
+      savePassage(repo, updated);
+      modal?.remove();
+      onResetToRead(updated);
+    };
+    modal?.querySelector("#reset-keep")?.addEventListener("click", () => finish("keep_content"));
+    modal?.querySelector("#reset-clear")?.addEventListener("click", () => finish("clear_content"));
+    modal?.querySelector("#reset-cancel")?.addEventListener("click", () => modal.remove());
   });
 }
 
@@ -854,8 +989,8 @@ function renderReduce(
 
     panel.innerHTML = `
       <h2>Reduce</h2>
-      <p class="empty">Practice from fuller cues down to none. Complete the stage only after using a <strong>reduced</strong> cue level.</p>
-      <label>Cue level
+      <p class="empty">Practice whether you can <strong>recall the passage from different cue formats</strong> — from fuller wording down to keywords, first letters, or no hints. Speak or recite from the cue, then reveal the original to check yourself. Complete the stage after practicing a <strong>reduced</strong> (not Full text) level.</p>
+      <label>Cue format to practice from
         <select id="level">
           ${REDUCTION_LEVELS.map((l) => {
             const hasSaved = l.needsPaste && Boolean(passage.reductions[l.id]?.trim());
@@ -899,12 +1034,12 @@ function renderReduce(
           : ""
       }
       <div class="cue-box panel" style="margin-top:1rem;box-shadow:none">
-        <p><strong>Cues</strong></p>
+        <p><strong>Practice cue</strong> — try to recall the full passage from this alone</p>
         <pre class="cue-pre">${esc(cue || "(no hints — recall from memory)")}</pre>
         ${reveal ? `<pre class="cue-pre original">${esc(passage.text)}</pre>` : ""}
       </div>
       <div class="row stage-next-row">
-        <button class="btn secondary" type="button" id="toggle-reveal">${reveal ? "Hide original" : "Reveal original"}</button>
+        <button class="btn secondary" type="button" id="toggle-reveal">${reveal ? "Hide original" : "Reveal original to check"}</button>
         <button class="btn ${isComplete(passage, "reduce") ? "secondary" : "stage-next"}" type="button" id="mark-reduce" ${pasteMissing ? "disabled" : ""} title="${pasteMissing ? "Save a ChatGPT reduction first" : "Mark Reduce practiced"}">${isComplete(passage, "reduce") ? "Reduce completed" : "Mark Reduce practiced"}</button>
         <span class="toast" id="reduce-toast" hidden></span>
       </div>

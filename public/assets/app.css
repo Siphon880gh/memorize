@@ -392,11 +392,13 @@ button.btn:disabled {
 .modal {
   width: min(28rem, 100%);
   max-height: min(80vh, 36rem);
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bg1);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
-  padding: 1rem 1.1rem 1.15rem;
+  padding: 0;
 }
 
 .modal-head {
@@ -404,7 +406,14 @@ button.btn:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0.95rem 1.1rem;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--line);
 }
 
 .modal-head h3 {
@@ -415,6 +424,11 @@ button.btn:disabled {
 
 .modal-body {
   color: var(--muted);
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.9rem 1.1rem 1.15rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-body p,
@@ -434,6 +448,44 @@ button.btn:disabled {
 
 .modal-body strong {
   color: var(--ink);
+}
+
+.modal-actions {
+  margin-top: 1rem;
+}
+
+button.linkish {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.hint-attempt-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.hint-attempt {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg0) 70%, transparent);
+}
+
+.hint-attempt ul {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
 }
 
 .stage-nav {
@@ -535,6 +587,22 @@ label.inline {
   margin: 0 0 1rem;
 }
 
+.order-legend {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.order-legend-cue {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.order-legend-full {
+  color: var(--ok);
+  font-weight: 700;
+}
+
 .order-list {
   list-style: none;
   margin: 0 0 1rem;
@@ -558,6 +626,7 @@ label.inline {
   border-color: var(--accent);
 }
 
+.order-item.in-place,
 .order-item.correct {
   border-color: color-mix(in srgb, var(--ok) 70%, var(--line));
   background: color-mix(in srgb, var(--ok) 12%, var(--bg0));
@@ -565,6 +634,34 @@ label.inline {
 
 .order-item.wrong {
   border-color: color-mix(in srgb, var(--danger) 55%, var(--line));
+}
+
+.order-card-body {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.order-card-meta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.order-item.revealed .order-card-meta {
+  color: var(--ok);
+}
+
+.order-item.cue-only .order-card-text {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.order-item.revealed .order-card-text {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .cue-pre {

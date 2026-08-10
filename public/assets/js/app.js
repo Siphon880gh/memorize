@@ -60,7 +60,23 @@
     }
   }
   function shareUrlFromPayload(payload, origin = location.origin, path = location.pathname) {
-    return `${origin}${path}#share/${encodeSharePayload(payload)}`;
+    const clean = path.replace(/\/index\.php$/i, "/");
+    return `${origin}${clean}#share/${encodeSharePayload(payload)}`;
+  }
+  function encodedShareFromHash(hash) {
+    const raw = hash.replace(/^#/, "");
+    if (!raw.startsWith("share/")) return null;
+    const encoded = raw.slice("share/".length);
+    return encoded || null;
+  }
+  function passageInputFromShare(payload) {
+    return {
+      type: payload.type,
+      title: payload.title,
+      text: payload.text?.trim() ?? "",
+      bibleReference: payload.bibleReference,
+      versionHint: payload.versionHint
+    };
   }
 
   // src/types.ts
@@ -486,8 +502,77 @@
   }
 
   // src/lib/ordering.ts
+  var KEYWORD_STOP = /* @__PURE__ */ new Set([
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "of",
+    "to",
+    "in",
+    "on",
+    "for",
+    "is",
+    "are",
+    "be",
+    "as",
+    "it",
+    "at",
+    "by",
+    "from",
+    "with",
+    "our",
+    "us",
+    "we",
+    "thy",
+    "thou",
+    "thee",
+    "ye",
+    "that",
+    "this",
+    "his",
+    "her",
+    "their",
+    "my",
+    "me",
+    "i",
+    "you",
+    "your",
+    "not",
+    "but",
+    "so",
+    "if",
+    "into",
+    "unto"
+  ]);
   function toOrderItems(segments) {
     return segments.slice().sort((a, b) => a.index - b.index).map((s) => ({ id: s.id, text: s.text }));
+  }
+  function segmentFirstWord(text) {
+    const word = text.trim().split(/\s+/).find(Boolean) ?? "";
+    return word.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, "") || word || "\u2026";
+  }
+  function segmentKeywords(text) {
+    const words = text.trim().split(/\s+/).map((w) => w.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, "")).filter(Boolean);
+    const keys = words.filter((w) => {
+      const lower = w.toLowerCase();
+      return lower.length > 2 && !KEYWORD_STOP.has(lower);
+    });
+    if (keys.length === 0) return segmentFirstWord(text);
+    return keys.join(" \xB7 ");
+  }
+  function reconstructCardLabel(fullText, mode, inCorrectPlace) {
+    if (inCorrectPlace) {
+      return { text: fullText, revealed: true };
+    }
+    if (mode === "full") {
+      return { text: fullText, revealed: false };
+    }
+    if (mode === "first_word") {
+      return { text: segmentFirstWord(fullText), revealed: false };
+    }
+    return { text: segmentKeywords(fullText), revealed: false };
   }
   function shuffleItems(items, rng = Math.random) {
     const arr = items.slice();
@@ -664,11 +749,14 @@
   }
   function recordAttempt(passage, input) {
     const completedAt = (/* @__PURE__ */ new Date()).toISOString();
-    const zeroHint = input.success && input.hintsUsed === 0;
+    const events = input.hintEvents ?? [];
+    const hintsUsed = Math.max(input.hintsUsed, events.length);
+    const zeroHint = input.success && hintsUsed === 0;
     const attempt = {
       id: newId(),
       stage: input.stage,
-      hintsUsed: input.hintsUsed,
+      hintsUsed,
+      hintEvents: events,
       durationMs: input.durationMs,
       zeroHint,
       completedAt,
@@ -676,11 +764,11 @@
     };
     const stats = { ...passage.stats ?? emptyStats() };
     stats.attemptCount += 1;
-    stats.latestHintCount = input.hintsUsed;
+    stats.latestHintCount = hintsUsed;
     stats.lastPracticedAt = completedAt;
     if (input.success) {
-      if (stats.bestHintCount === null || input.hintsUsed < stats.bestHintCount) {
-        stats.bestHintCount = input.hintsUsed;
+      if (stats.bestHintCount === null || hintsUsed < stats.bestHintCount) {
+        stats.bestHintCount = hintsUsed;
       }
       if (stats.bestTimeMs === null || input.durationMs < stats.bestTimeMs) {
         stats.bestTimeMs = input.durationMs;
@@ -695,6 +783,39 @@
     };
     updated.stats.memorizationPercent = computeMemorizationPercent(updated);
     return updated;
+  }
+  function resetMastery(passage, mode) {
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const base = {
+      ...passage,
+      masteredAt: null,
+      stageProgress: {},
+      attempts: [],
+      stats: emptyStats(),
+      updatedAt: now
+    };
+    if (mode === "clear_content") {
+      return {
+        ...base,
+        segmentNotes: {},
+        reductions: {},
+        reductionMeta: void 0,
+        visualAnchors: []
+      };
+    }
+    return base;
+  }
+  function hintKindLabel(kind) {
+    switch (kind) {
+      case "place_hint":
+        return "Hint button";
+      case "reveal_original":
+        return "Reveal full text";
+      case "full_cue":
+        return "Full-segment cue";
+      default:
+        return kind;
+    }
   }
 
   // src/lib/visualPrompt.ts
@@ -718,7 +839,7 @@
     const canIncludeText = passage.type !== "bible";
     host.innerHTML = `
     <div class="row" style="margin-top:0.75rem">
-      ${canIncludeText ? `<label class="inline"><input type="checkbox" id="include-text" /> Include text in link</label>` : `<span class="empty">Bible shares send reference only (no translation body).</span>`}
+      ${canIncludeText ? `<label class="inline"><input type="checkbox" id="include-text" checked /> Include text in link</label>` : `<span class="empty">Bible shares send reference only (no translation body). Recipients open a library item they can paste into.</span>`}
       <button class="btn secondary" type="button" id="copy-share">Copy share link</button>
       <button class="btn secondary" type="button" id="native-share">Share\u2026</button>
       <span class="toast" id="share-toast" hidden></span>
@@ -906,7 +1027,10 @@
         renderTraining(root, repo2, passageId, callbacks, "recall");
       });
     } else if (activeStage === "master") {
-      renderMaster(panel, repo2, passage);
+      renderMaster(panel, repo2, passage, (updated) => {
+        Object.assign(passage, updated);
+        go("read");
+      });
     }
   }
   function syncSegments(repo2, passage) {
@@ -1012,35 +1136,65 @@
     let order = shuffleItems(correct);
     let selected = 0;
     let hintsUsed = 0;
+    const hintEvents = [];
     let checked = null;
-    let message = "Bring the hint count down to 0.";
+    let cueMode = "first_word";
+    let message = "Drag the cards into the correct order, then check.";
     const startedAt = Date.now();
     const paint = () => {
       panel.innerHTML = `
       <h2>Reconstruct</h2>
-      <p class="empty"><strong>Bring the hint count down to 0.</strong> Drag segments, or use keyboard: \u2191/\u2193 move.</p>
+      <p class="empty"><strong>Put the passage back in order.</strong> The cards are shuffled \u2014 drag them (or use \u2191/\u2193) until the sequence matches the original. A card shows a cue until it sits in the right slot; then it expands to the full segment. Hint clicks and choosing <strong>Full segment</strong> each count as hints.</p>
+      <label>Card cue while out of place
+        <select id="reconstruct-cue">
+          <option value="first_word" ${cueMode === "first_word" ? "selected" : ""}>First word</option>
+          <option value="keywords" ${cueMode === "keywords" ? "selected" : ""}>Keywords</option>
+          <option value="full" ${cueMode === "full" ? "selected" : ""}>Full segment (counts as hint)</option>
+        </select>
+      </label>
       <p class="stats-line">Hints this attempt: <strong id="hint-count">${hintsUsed}</strong> \xB7 Best: <strong>${passage.stats.bestHintCount ?? "\u2014"}</strong> \xB7 Zero-hint wins: <strong>${passage.stats.zeroHintCompletions}</strong></p>
-      <ul class="order-list" id="order-list">
+      <p class="order-legend"><span class="order-legend-cue">Cue</span> = still rearranging \xB7 <span class="order-legend-full">Full line</span> = correct place</p>
+      <ul class="order-list" id="order-list" aria-label="Shuffled segments \u2014 rearrange into the correct order">
         ${order.map((item, i) => {
+        const inPlace = item.id === correctIds[i];
+        const label = reconstructCardLabel(item.text, cueMode, inPlace);
         const cls = [
           selected === i ? "selected" : "",
+          inPlace ? "in-place" : "out-of-place",
+          label.revealed ? "revealed" : "cue-only",
           checked ? checked[i] ? "correct" : "wrong" : ""
         ].filter(Boolean).join(" ");
         return `<li class="order-item ${cls}" draggable="true" tabindex="0" data-index="${i}" data-id="${item.id}">
-              <span class="seg-idx">${i + 1}</span>
-              <span>${esc2(item.text)}</span>
+              <span class="seg-idx" title="Current slot ${i + 1}">${i + 1}</span>
+              <span class="order-card-body">
+                <span class="order-card-meta">${label.revealed ? "Full segment \xB7 slot correct" : "Cue \xB7 rearrange"}</span>
+                <span class="order-card-text">${esc2(label.text)}</span>
+              </span>
             </li>`;
       }).join("")}
       </ul>
       <div class="row">
         <button class="btn ${isComplete(passage, "reconstruct") ? "secondary" : ""}" type="button" id="check-order">Check order</button>
-        <button class="btn secondary" type="button" id="hint-btn">Hint (next phrase)</button>
+        <button class="btn secondary" type="button" id="hint-btn">Hint (place next segment)</button>
         <button class="btn secondary" type="button" id="reshuffle">Reshuffle</button>
         <button class="btn secondary" type="button" id="reset-order">Reset attempt</button>
       </div>
       <p class="toast" id="order-toast">${esc2(message)}</p>
       ${isComplete(passage, "reconstruct") ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="continue-recall">Continue \u2192 Recall</button></div>` : ""}
     `;
+      panel.querySelector("#reconstruct-cue")?.addEventListener("change", (e) => {
+        const next = e.target.value;
+        if (next === "full" && cueMode !== "full" && !hintEvents.some((h) => h.kind === "full_cue")) {
+          hintsUsed += 1;
+          hintEvents.push({
+            kind: "full_cue",
+            at: (/* @__PURE__ */ new Date()).toISOString(),
+            detail: "Switched card cue to Full segment"
+          });
+        }
+        cueMode = next;
+        paint();
+      });
       let dragFrom = null;
       panel.querySelectorAll(".order-item").forEach((el) => {
         el.addEventListener("dragstart", () => {
@@ -1086,6 +1240,7 @@
           let updated = recordAttempt(passage, {
             stage: "reconstruct",
             hintsUsed,
+            hintEvents: hintEvents.slice(),
             durationMs: Date.now() - startedAt,
             success: true
           });
@@ -1098,11 +1253,11 @@
           };
           savePassage(repo2, updated);
           Object.assign(passage, updated);
-          message = hintsUsed === 0 ? "Perfect \u2014 zero hints!" : `Correct with ${hintsUsed} hint(s). Aim for 0 next time.`;
+          message = hintsUsed === 0 ? "Perfect order \u2014 zero hints!" : `Correct order with ${hintsUsed} hint(s). Aim for 0 next time.`;
           onDone(updated);
           return;
         }
-        message = "Not yet \u2014 correct phrases are highlighted.";
+        message = "Not in order yet \u2014 green slots are right; keep rearranging the rest.";
         paint();
       });
       panel.querySelector("#hint-btn")?.addEventListener("click", () => {
@@ -1111,28 +1266,35 @@
           correctIds
         );
         if (result.hintedIndex === -1) {
-          message = "Nothing left to hint.";
+          message = "Everything is already in order.";
           paint();
           return;
         }
         hintsUsed += 1;
+        hintEvents.push({
+          kind: "place_hint",
+          at: (/* @__PURE__ */ new Date()).toISOString(),
+          detail: `Hint button placed the correct segment in slot ${result.hintedIndex + 1}`
+        });
         order = result.ids.map((id) => correct.find((c) => c.id === id));
         checked = null;
         selected = result.hintedIndex;
-        message = `Hint placed phrase #${result.hintedIndex + 1}. Bring the hint count down to 0.`;
+        message = `Hint: placed the correct segment in slot ${result.hintedIndex + 1}. Keep rearranging.`;
         paint();
       });
       panel.querySelector("#reshuffle")?.addEventListener("click", () => {
         order = shuffleItems(correct);
         checked = null;
-        message = "Reshuffled. Bring the hint count down to 0.";
+        message = "Reshuffled \u2014 rearrange the cards into the correct order.";
         paint();
       });
       panel.querySelector("#reset-order")?.addEventListener("click", () => {
         order = shuffleItems(correct);
         hintsUsed = 0;
+        hintEvents.length = 0;
         checked = null;
-        message = "Attempt reset. Bring the hint count down to 0.";
+        cueMode = "first_word";
+        message = "Attempt reset \u2014 rearrange from scratch.";
         paint();
       });
       panel.querySelector("#continue-recall")?.addEventListener("click", () => {
@@ -1147,11 +1309,12 @@
     let reveal = false;
     const startedAt = Date.now();
     let hintsUsed = 0;
+    const hintEvents = [];
     const paint = () => {
       const cue = localReduction(level, passage.text, passage.reductions[level]);
       panel.innerHTML = `
       <h2>Recall</h2>
-      <p class="empty">Type the passage from memory. Your answer is checked against the original \u2014 close isn\u2019t enough if key words are missing.</p>
+      <p class="empty">Type the passage from memory. Checking is <strong>case-insensitive</strong> and <strong>lax about punctuation</strong> \u2014 but key words still need to be there. Revealing the original counts as a hint.</p>
       <label>Cue level
         <select id="recall-level">
           ${REDUCTION_LEVELS.map((l) => `<option value="${l.id}" ${l.id === level ? "selected" : ""}>${l.label}</option>`).join("")}
@@ -1166,6 +1329,7 @@
         <button class="btn secondary" type="button" id="recall-reveal">${reveal ? "Hide original" : "Reveal original (counts as hint)"}</button>
         <button class="btn ${isComplete(passage, "recall") ? "secondary" : ""}" type="button" id="recall-done">Check recall</button>
       </div>
+      <p class="stats-line">Hints this attempt: <strong>${hintsUsed}</strong></p>
       <p class="toast" id="recall-toast" hidden></p>
       ${isComplete(passage, "recall") ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="continue-master">Continue \u2192 Master</button></div>` : ""}
     `;
@@ -1174,7 +1338,14 @@
         paint();
       });
       panel.querySelector("#recall-reveal")?.addEventListener("click", () => {
-        if (!reveal) hintsUsed += 1;
+        if (!reveal) {
+          hintsUsed += 1;
+          hintEvents.push({
+            kind: "reveal_original",
+            at: (/* @__PURE__ */ new Date()).toISOString(),
+            detail: "Revealed the full original passage"
+          });
+        }
         reveal = !reveal;
         paint();
       });
@@ -1192,6 +1363,7 @@
         let updated = recordAttempt(passage, {
           stage: "recall",
           hintsUsed,
+          hintEvents: hintEvents.slice(),
           durationMs: Date.now() - startedAt,
           success: grade.ok
         });
@@ -1220,27 +1392,54 @@
     };
     paint();
   }
-  function renderMaster(panel, repo2, passage) {
+  function renderMaster(panel, repo2, passage, onResetToRead) {
     const checklist = STAGE_ORDER.map((s) => ({
       id: s,
       done: isComplete(passage, s) || s === "master" && Boolean(passage.masteredAt)
     }));
     const zeroHint = passage.stats.zeroHintCompletions > 0;
     const ready = checklist.filter((c) => c.id !== "master").every((c) => c.done) && zeroHint;
+    const scoredAttempts = passage.attempts.filter((a) => a.stage === "reconstruct" || a.stage === "recall");
     panel.innerHTML = `
     <h2>Master</h2>
-    <p class="empty">Mastery means every stage is truly completed and you have a <strong>correct</strong> zero-hint reconstruct or recall win.</p>
+    <p class="empty">Mastery means every stage is truly completed and you have a <strong>correct zero-hint</strong> Reconstruct or Recall win. Hints include <strong>hint buttons you click</strong> and <strong>revealing the full segment/original</strong> (including Full-segment cue on Reconstruct).</p>
+    <p class="stats-line">
+      Zero-hint wins: <strong>${passage.stats.zeroHintCompletions}</strong>
+      \xB7 Best hints on a win: <strong>${passage.stats.bestHintCount ?? "\u2014"}</strong>
+      \xB7 <button type="button" class="linkish" id="hint-details">Details</button>
+    </p>
     <ul class="segment-list">
       ${checklist.map(
       (c) => `<li><span class="seg-idx">${c.done ? "\u2713" : "\xB7"}</span> ${c.id}${c.id === "master" ? " (this gate)" : ""}</li>`
     ).join("")}
       <li><span class="seg-idx">${zeroHint ? "\u2713" : "\xB7"}</span> At least one correct zero-hint completion</li>
     </ul>
-    <div class="row">
+    <div class="row stage-next-row">
       <button class="btn stage-next" type="button" id="mark-master" ${ready ? "" : "disabled"}>Mark mastered</button>
-      <span class="toast" id="master-toast">${ready ? "Ready to mark mastery." : "Finish locked stages and earn a correct zero-hint win first."}</span>
+      <button class="btn danger" type="button" id="reset-mastery">Reset mastery</button>
     </div>
+    <p class="toast" id="master-toast">${passage.masteredAt ? "Mastered. Reset anytime to train again from Read." : ready ? "Ready to mark mastery." : "Finish locked stages and earn a correct zero-hint win first."}</p>
   `;
+    panel.querySelector("#hint-details")?.addEventListener("click", () => {
+      const body = scoredAttempts.length === 0 ? `<p>No Reconstruct or Recall attempts recorded yet.</p>
+           <p>Hints count when you click a hint button, reveal the original text, or use the Full-segment cue while rearranging.</p>` : `<p>Each attempt below lists what counted toward its hint total.</p>
+           <ul class="hint-attempt-list">
+             ${scoredAttempts.slice().reverse().map((a) => {
+        const when = new Date(a.completedAt).toLocaleString();
+        const events = a.hintEvents?.length ? `<ul>${a.hintEvents.map(
+          (h) => `<li><strong>${esc2(hintKindLabel(h.kind))}</strong> \u2014 ${esc2(h.detail)} <span class="empty">(${esc2(new Date(h.at).toLocaleString())})</span></li>`
+        ).join("")}</ul>` : a.hintsUsed === 0 ? `<p class="empty">No hints on this attempt.</p>` : `<p class="empty">${a.hintsUsed} hint(s) (details unavailable for this older attempt).</p>`;
+        return `<li class="hint-attempt">
+                   <strong>${esc2(a.stage)}</strong>
+                   \xB7 ${a.success ? "success" : "miss"}
+                   \xB7 ${a.hintsUsed} hint(s)${a.zeroHint ? " \xB7 zero-hint win" : ""}
+                   \xB7 <span class="empty">${esc2(when)}</span>
+                   ${events}
+                 </li>`;
+      }).join("")}
+           </ul>`;
+      openHelpModal("Hint details", body);
+    });
     panel.querySelector("#mark-master")?.addEventListener("click", () => {
       if (!ready) return;
       const now = (/* @__PURE__ */ new Date()).toISOString();
@@ -1261,6 +1460,29 @@
       Object.assign(passage, updated);
       const toast = panel.querySelector("#master-toast");
       if (toast) toast.textContent = "Mastered. Keep drilling to stay sharp.";
+      panel.querySelector("#mark-master").disabled = true;
+    });
+    panel.querySelector("#reset-mastery")?.addEventListener("click", () => {
+      openHelpModal(
+        "Reset mastery?",
+        `<p>This clears mastery, sets hints/wins back to <strong>0</strong>, unlocks stages from the start, and returns you to <strong>Read</strong>.</p>
+       <p>Choose whether to keep study content you filled in (notes, ChatGPT reductions, visual anchors / image URLs).</p>
+       <div class="row modal-actions">
+         <button type="button" class="btn" id="reset-keep">Keep filled info</button>
+         <button type="button" class="btn danger" id="reset-clear">Reset filled info too</button>
+         <button type="button" class="btn secondary" id="reset-cancel">Cancel</button>
+       </div>`
+      );
+      const modal = document.getElementById("app-help-modal");
+      const finish = (mode) => {
+        const updated = resetMastery(passage, mode);
+        savePassage(repo2, updated);
+        modal?.remove();
+        onResetToRead(updated);
+      };
+      modal?.querySelector("#reset-keep")?.addEventListener("click", () => finish("keep_content"));
+      modal?.querySelector("#reset-clear")?.addEventListener("click", () => finish("clear_content"));
+      modal?.querySelector("#reset-cancel")?.addEventListener("click", () => modal.remove());
     });
   }
   function openHelpModal(title, bodyHtml) {
@@ -1460,8 +1682,8 @@
       const savedAt = pastedSaved ? passage.reductionMeta?.updatedAt : void 0;
       panel.innerHTML = `
       <h2>Reduce</h2>
-      <p class="empty">Practice from fuller cues down to none. Complete the stage only after using a <strong>reduced</strong> cue level.</p>
-      <label>Cue level
+      <p class="empty">Practice whether you can <strong>recall the passage from different cue formats</strong> \u2014 from fuller wording down to keywords, first letters, or no hints. Speak or recite from the cue, then reveal the original to check yourself. Complete the stage after practicing a <strong>reduced</strong> (not Full text) level.</p>
+      <label>Cue format to practice from
         <select id="level">
           ${REDUCTION_LEVELS.map((l) => {
         const hasSaved = l.needsPaste && Boolean(passage.reductions[l.id]?.trim());
@@ -1497,12 +1719,12 @@
               </div>
             </section>` : ""}
       <div class="cue-box panel" style="margin-top:1rem;box-shadow:none">
-        <p><strong>Cues</strong></p>
+        <p><strong>Practice cue</strong> \u2014 try to recall the full passage from this alone</p>
         <pre class="cue-pre">${esc2(cue || "(no hints \u2014 recall from memory)")}</pre>
         ${reveal ? `<pre class="cue-pre original">${esc2(passage.text)}</pre>` : ""}
       </div>
       <div class="row stage-next-row">
-        <button class="btn secondary" type="button" id="toggle-reveal">${reveal ? "Hide original" : "Reveal original"}</button>
+        <button class="btn secondary" type="button" id="toggle-reveal">${reveal ? "Hide original" : "Reveal original to check"}</button>
         <button class="btn ${isComplete(passage, "reduce") ? "secondary" : "stage-next"}" type="button" id="mark-reduce" ${pasteMissing ? "disabled" : ""} title="${pasteMissing ? "Save a ChatGPT reduction first" : "Mark Reduce practiced"}">${isComplete(passage, "reduce") ? "Reduce completed" : "Mark Reduce practiced"}</button>
         <span class="toast" id="reduce-toast" hidden></span>
       </div>
@@ -1643,21 +1865,28 @@
     while (app.firstChild) shell.appendChild(app.firstChild);
     app.appendChild(shell);
   }
+  function findExistingFromShare(payload) {
+    const text = payload.text;
+    const ref = payload.bibleReference ?? "";
+    return repo.listPassages().find(
+      (p) => p.type === payload.type && p.title === payload.title && (p.bibleReference ?? "") === ref && (p.text ?? "") === text
+    );
+  }
   function mount() {
     const hash = location.hash.replace(/^#/, "");
     const parts = hash.split("/").filter(Boolean);
-    if (parts[0] === "share" && parts[1]) {
-      const payload = decodeSharePayload(parts[1]);
+    const shareEncoded = encodedShareFromHash(location.hash);
+    if (shareEncoded) {
+      const payload = decodeSharePayload(shareEncoded);
       if (payload) {
-        showLibrary({
-          title: payload.title,
-          type: payload.type,
-          bibleReference: payload.bibleReference,
-          versionHint: payload.versionHint,
-          text: payload.text
-        });
+        const input = passageInputFromShare(payload);
+        const existing = findExistingFromShare(input);
+        const passage = existing ?? repo.upsertPassage(input);
+        history.replaceState(null, "", `#passage/${passage.id}/read`);
+        renderTraining(app, repo, passage.id, { onBack: showLibrary }, "read");
         return;
       }
+      history.replaceState(null, "", "#");
     }
     if (parts[0] === "scoreboard") {
       renderScoreboard(app, repo, {

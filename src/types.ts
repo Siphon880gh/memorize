@@ -40,10 +40,20 @@ export type VisualAnchor = {
   updatedAt: string;
 };
 
+export type HintEventKind = "place_hint" | "reveal_original" | "full_cue";
+
+export type HintEvent = {
+  kind: HintEventKind;
+  at: string;
+  detail: string;
+};
+
 export type Attempt = {
   id: string;
   stage: "reconstruct" | "recall" | "master";
   hintsUsed: number;
+  /** What counted toward hintsUsed (clicked hints + reveals). */
+  hintEvents?: HintEvent[];
   durationMs: number;
   zeroHint: boolean;
   completedAt: string;
