@@ -58,6 +58,7 @@ function renderLibrary(root, repo, callbacks, editing) {
           <button class="btn secondary" type="button" id="add-psalm23">Psalm 23</button>
           <button class="btn secondary" type="button" id="add-armor-of-god">Armor of God</button>
           <button class="btn secondary" type="button" id="add-daily-bread">Daily Bread Prayer</button>
+          <button class="btn secondary" type="button" id="add-coming-to-christ">Coming to Christ</button>
         </div>
       </div>
       ${count === 0 ? `<p class="empty">No passages yet. Add one above, or use a starter.</p>` : `<ul class="passage-list">${passages.map(renderItem).join("")}</ul>`}
@@ -108,6 +109,9 @@ function renderLibrary(root, repo, callbacks, editing) {
   });
   root.querySelector("#add-daily-bread")?.addEventListener("click", () => {
     callbacks.onDailyBreadStarter?.();
+  });
+  root.querySelector("#add-coming-to-christ")?.addEventListener("click", () => {
+    callbacks.onComingToChristStarter?.();
   });
   root.querySelector("#export-data")?.addEventListener("click", () => {
     downloadText("memorize-script-backup.json", exportDocument(repo.load()));
