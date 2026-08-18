@@ -132,11 +132,41 @@
       "I am crucified with Christ: nevertheless I live; yet not I, but Christ liveth in me: and the life which I now live in the flesh I live by the faith of the Son of God, who loved me, and gave himself for me."
     ].join("\n")
   };
+
+  // src/data/sampleResistTheDevil.ts
+  var RESIST_THE_DEVIL_STARTER = {
+    type: "bible",
+    title: "Resist the Devil",
+    bibleReference: "James 4:7-8",
+    versionHint: "KJV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=James%204%3A7-8&version=KJV",
+    description: "Submit yourselves therefore to God. Resist the devil, and he will flee from you.",
+    text: [
+      "Submit yourselves therefore to God. Resist the devil, and he will flee from you.",
+      "Draw nigh to God, and he will draw nigh to you. Cleanse your hands, ye sinners; and purify your hearts, ye double minded."
+    ].join("\n")
+  };
+
+  // src/data/sampleGetBehindMeSatan.ts
+  var GET_BEHIND_ME_SATAN_STARTER = {
+    type: "bible",
+    title: "Get Behind Me, Satan",
+    bibleReference: "Luke 4:8; Matthew 16:23",
+    versionHint: "KJV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Luke%204%3A8%3BMatthew%2016%3A23&version=KJV",
+    description: "Get thee behind me, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve",
+    text: [
+      "And Jesus answered and said unto him, Get thee behind me, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.",
+      "But he turned, and said unto Peter, Get thee behind me, Satan: thou art an offence unto me: for thou savourest not the things that be of God, but those that be of men."
+    ].join("\n")
+  };
   var OUR_LIBRARY = [
     { key: "psalm91", starter: PSALM_91_STARTER },
     { key: "psalm23", starter: PSALM_23_STARTER },
     { key: "psalm21", starter: PSALM_21_STARTER },
     { key: "armor-of-god", starter: ARMOR_OF_GOD_STARTER },
+    { key: "resist-the-devil", starter: RESIST_THE_DEVIL_STARTER },
+    { key: "get-behind-me-satan", starter: GET_BEHIND_ME_SATAN_STARTER },
     { key: "daily-bread", starter: DAILY_BREAD_PRAYER_STARTER },
     { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER }
   ];

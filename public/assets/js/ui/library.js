@@ -6,6 +6,8 @@ import {
   PSALM_23_STARTER,
   PSALM_21_STARTER,
   ARMOR_OF_GOD_STARTER,
+  RESIST_THE_DEVIL_STARTER,
+  GET_BEHIND_ME_SATAN_STARTER,
   DAILY_BREAD_PRAYER_STARTER,
   COMING_TO_CHRIST_STARTER
 } from "../data/starters.js";
@@ -14,6 +16,8 @@ const OUR_LIBRARY = [
   { key: "psalm23", starter: PSALM_23_STARTER },
   { key: "psalm21", starter: PSALM_21_STARTER },
   { key: "armor-of-god", starter: ARMOR_OF_GOD_STARTER },
+  { key: "resist-the-devil", starter: RESIST_THE_DEVIL_STARTER },
+  { key: "get-behind-me-satan", starter: GET_BEHIND_ME_SATAN_STARTER },
   { key: "daily-bread", starter: DAILY_BREAD_PRAYER_STARTER },
   { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER }
 ];
