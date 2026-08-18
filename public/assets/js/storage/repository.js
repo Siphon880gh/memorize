@@ -40,6 +40,7 @@ function normalizePassage(p) {
     bibleReference: p.bibleReference,
     versionHint: p.versionHint,
     bibleGatewayUrl: p.bibleGatewayUrl,
+    description: p.description?.trim() || void 0,
     text: p.text || "",
     createdAt: p.createdAt || now,
     updatedAt: p.updatedAt || now,
@@ -95,6 +96,7 @@ class PassageRepository {
       bibleReference: input.bibleReference?.trim() || void 0,
       versionHint: input.versionHint?.trim() || void 0,
       bibleGatewayUrl: input.bibleGatewayUrl?.trim() || void 0,
+      description: input.description?.trim() || void 0,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now
     });

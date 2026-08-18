@@ -1,12 +1,35 @@
 import { downloadText, exportDocument, importDocument } from "../lib/backup.js";
 import { PassageRepository } from "../storage/repository.js";
 import { PASSAGE_TYPES, STORAGE_KEY } from "../types.js";
+import {
+  PSALM_91_STARTER,
+  PSALM_23_STARTER,
+  PSALM_21_STARTER,
+  ARMOR_OF_GOD_STARTER,
+  DAILY_BREAD_PRAYER_STARTER,
+  COMING_TO_CHRIST_STARTER
+} from "../data/starters.js";
+const OUR_LIBRARY = [
+  { key: "psalm91", starter: PSALM_91_STARTER },
+  { key: "psalm23", starter: PSALM_23_STARTER },
+  { key: "psalm21", starter: PSALM_21_STARTER },
+  { key: "armor-of-god", starter: ARMOR_OF_GOD_STARTER },
+  { key: "daily-bread", starter: DAILY_BREAD_PRAYER_STARTER },
+  { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER }
+];
+let libraryTab = "our";
+let libraryToast = "";
 function typeLabel(t) {
   return t.replaceAll("_", " ");
+}
+function starterByKey(key) {
+  return OUR_LIBRARY.find((item) => item.key === key)?.starter;
 }
 function renderLibrary(root, repo, callbacks, editing) {
   const passages = repo.listPassages();
   const count = passages.length;
+  const ourList = `<ul class="passage-list">${OUR_LIBRARY.map((item) => renderItem(item.starter, { catalogKey: item.key })).join("")}</ul>`;
+  const myList = count === 0 ? `<p class="empty">No passages yet. Add one above, or copy one from Our Library.</p>` : `<ul class="passage-list">${passages.map((p) => renderItem(p)).join("")}</ul>`;
   root.innerHTML = `
     <div class="app-shell">
     <header class="topbar">
@@ -51,17 +74,16 @@ function renderLibrary(root, repo, callbacks, editing) {
       </form>
     </section>
     <section class="panel" id="library-panel">
-      <div class="row library-head">
-        <h2 style="margin:0">Your library (${count})</h2>
-        <div class="row starter-row">
-          <button class="btn secondary" type="button" id="add-psalm91">Psalm 91</button>
-          <button class="btn secondary" type="button" id="add-psalm23">Psalm 23</button>
-          <button class="btn secondary" type="button" id="add-armor-of-god">Armor of God</button>
-          <button class="btn secondary" type="button" id="add-daily-bread">Daily Bread Prayer</button>
-          <button class="btn secondary" type="button" id="add-coming-to-christ">Coming to Christ</button>
+      <div class="library-head">
+        <div class="library-tabs" role="tablist" aria-label="Library">
+          <button class="btn secondary${libraryTab === "our" ? " nav-current" : ""}" type="button" id="tab-our" role="tab" aria-selected="${libraryTab === "our"}" aria-controls="library-tab-panel">Our Library</button>
+          <button class="btn secondary${libraryTab === "mine" ? " nav-current" : ""}" type="button" id="tab-mine" role="tab" aria-selected="${libraryTab === "mine"}" aria-controls="library-tab-panel">My Library (${count})</button>
         </div>
       </div>
-      ${count === 0 ? `<p class="empty">No passages yet. Add one above, or use a starter.</p>` : `<ul class="passage-list">${passages.map(renderItem).join("")}</ul>`}
+      <div id="library-tab-panel" role="tabpanel">
+        ${libraryTab === "our" ? ourList : myList}
+      </div>
+      <p class="toast" id="library-toast" hidden></p>
     </section>
     </div>
   `;
@@ -82,6 +104,7 @@ function renderLibrary(root, repo, callbacks, editing) {
       toast.hidden = false;
       toast.textContent = `Saved \u201C${saved.title}\u201D.`;
     }
+    libraryTab = "mine";
     renderLibrary(root, repo, callbacks, null);
   });
   root.querySelector("#cancel-edit")?.addEventListener("click", () => {
@@ -98,20 +121,13 @@ function renderLibrary(root, repo, callbacks, editing) {
   root.querySelector("#goto-scoreboard")?.addEventListener("click", () => {
     callbacks.onScoreboard?.();
   });
-  root.querySelector("#add-psalm91")?.addEventListener("click", () => {
-    callbacks.onPsalm91Starter?.();
+  root.querySelector("#tab-our")?.addEventListener("click", () => {
+    libraryTab = "our";
+    renderLibrary(root, repo, callbacks, editing);
   });
-  root.querySelector("#add-psalm23")?.addEventListener("click", () => {
-    callbacks.onPsalm23Starter?.();
-  });
-  root.querySelector("#add-armor-of-god")?.addEventListener("click", () => {
-    callbacks.onArmorOfGodStarter?.();
-  });
-  root.querySelector("#add-daily-bread")?.addEventListener("click", () => {
-    callbacks.onDailyBreadStarter?.();
-  });
-  root.querySelector("#add-coming-to-christ")?.addEventListener("click", () => {
-    callbacks.onComingToChristStarter?.();
+  root.querySelector("#tab-mine")?.addEventListener("click", () => {
+    libraryTab = "mine";
+    renderLibrary(root, repo, callbacks, editing);
   });
   root.querySelector("#export-data")?.addEventListener("click", () => {
     downloadText("memorize-script-backup.json", exportDocument(repo.load()));
@@ -128,6 +144,60 @@ function renderLibrary(root, repo, callbacks, editing) {
     } catch (err) {
       alert(err instanceof Error ? err.message : "Import failed");
     }
+  });
+  function showLibraryToast(message) {
+    const toast = root.querySelector("#library-toast");
+    if (!toast) return;
+    toast.hidden = false;
+    toast.textContent = message;
+  }
+  if (libraryToast) {
+    showLibraryToast(libraryToast);
+    libraryToast = "";
+  }
+  root.querySelectorAll("[data-copy-starter]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const starter = starterByKey(btn.dataset.copyStarter);
+      if (!starter) return;
+      const existed = Boolean(callbacks.onFindStarter?.(starter));
+      const saved = callbacks.onApplyStarter?.(starter);
+      if (!saved) return;
+      libraryToast = existed ? `\u201C${starter.title}\u201D is already in My Library.` : `Copied \u201C${starter.title}\u201D to My Library.`;
+      renderLibrary(root, repo, callbacks, editing);
+    });
+  });
+  root.querySelectorAll("[data-open-starter]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const starter = starterByKey(btn.dataset.openStarter);
+      if (!starter) return;
+      const saved = callbacks.onApplyStarter?.(starter);
+      if (saved) callbacks.onOpenPassage(saved.id);
+    });
+  });
+  root.querySelectorAll("[data-edit-starter]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const starter = starterByKey(btn.dataset.editStarter);
+      if (!starter) return;
+      const saved = callbacks.onApplyStarter?.(starter);
+      if (saved) {
+        libraryTab = "mine";
+        renderLibrary(root, repo, callbacks, saved);
+      }
+    });
+  });
+  root.querySelectorAll("[data-delete-starter]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const starter = starterByKey(btn.dataset.deleteStarter);
+      if (!starter) return;
+      const match = callbacks.onFindStarter?.(starter);
+      if (!match) {
+        alert(`\u201C${starter.title}\u201D is not in My Library yet.`);
+        return;
+      }
+      if (!confirm(`Delete \u201C${match.title}\u201D from My Library?`)) return;
+      repo.deletePassage(match.id);
+      renderLibrary(root, repo, callbacks, null);
+    });
   });
   root.querySelectorAll("[data-open]").forEach((btn) => {
     btn.addEventListener("click", () => callbacks.onOpenPassage(btn.dataset.open));
@@ -149,19 +219,34 @@ function renderLibrary(root, repo, callbacks, editing) {
     });
   });
 }
-function renderItem(p) {
-  const preview = p.text.trim().slice(0, 80) || "(no text yet)";
+function passagePreview(p) {
+  const custom = p.description?.trim();
+  if (custom) return { text: custom, ellipsis: "" };
+  const body = p.text.trim();
+  if (!body) return { text: "(no text yet)", ellipsis: "" };
+  return { text: body.slice(0, 80), ellipsis: body.length > 80 ? "\u2026" : "" };
+}
+function renderItem(p, opts = {}) {
+  const { text: preview, ellipsis } = passagePreview(p);
   const meta = [typeLabel(p.type), p.bibleReference].filter(Boolean).join(" \xB7 ");
+  const key = opts.catalogKey;
+  const openAttr = key ? `data-open-starter="${key}"` : `data-open="${p.id}"`;
+  const editAttr = key ? `data-edit-starter="${key}"` : `data-edit="${p.id}"`;
+  const deleteAttr = key ? `data-delete-starter="${key}"` : `data-delete="${p.id}"`;
+  const copyBtn = key ? `<button class="copy-to-library" type="button" data-copy-starter="${key}">Copy to my library</button>` : "";
   return `<li class="passage-item">
     <div>
       <h3>${escapeHtml(p.title)}</h3>
       <p>${escapeHtml(meta)}</p>
-      <p>${escapeHtml(preview)}${p.text.trim().length > 80 ? "\u2026" : ""}</p>
+      <p>${escapeHtml(preview)}${ellipsis}</p>
     </div>
-    <div class="row">
-      <button class="btn" type="button" data-open="${p.id}">Open</button>
-      <button class="btn secondary" type="button" data-edit="${p.id}">Edit</button>
-      <button class="btn danger" type="button" data-delete="${p.id}">Delete</button>
+    <div class="passage-actions">
+      <div class="passage-actions-row">
+        <button class="btn" type="button" ${openAttr}>Open</button>
+        <button class="btn secondary" type="button" ${editAttr}>Edit</button>
+        <button class="btn danger" type="button" ${deleteAttr}>Delete</button>
+      </div>
+      ${copyBtn}
     </div>
   </li>`;
 }

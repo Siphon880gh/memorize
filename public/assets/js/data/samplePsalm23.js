@@ -1,9 +1,11 @@
 const PSALM_23_STARTER = {
   type: "bible",
-  title: "Psalm 23 The LORD Is My Shepherd",
+  title: "The Lord is My Shepherd (Psalm 23)",
   bibleReference: "Psalm 23",
   versionHint: "KJV",
   bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=KJV",
+  description:
+    "The LORD is my shepherd; I shall not want. He maketh me to lie down in green pastures\u2026though I walk through the valley of the shadow of death",
   text: [
     "The LORD is my shepherd; I shall not want.",
     "He maketh me to lie down in green pastures: he leadeth me beside the still waters.",

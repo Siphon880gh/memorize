@@ -19,7 +19,7 @@
   // src/data/samplePsalm91.ts
   var PSALM_91_STARTER = {
     type: "bible",
-    title: "Psalm 91",
+    title: "My Refuge and My Fortress (Psalm 91)",
     bibleReference: "Psalm 91",
     versionHint: "KJV",
     bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2091&version=KJV",
@@ -46,10 +46,11 @@
   // src/data/samplePsalm23.ts
   var PSALM_23_STARTER = {
     type: "bible",
-    title: "Psalm 23 The LORD Is My Shepherd",
+    title: "The Lord is My Shepherd (Psalm 23)",
     bibleReference: "Psalm 23",
     versionHint: "KJV",
     bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=KJV",
+    description: "The LORD is my shepherd; I shall not want. He maketh me to lie down in green pastures\u2026though I walk through the valley of the shadow of death",
     text: [
       "The LORD is my shepherd; I shall not want.",
       "He maketh me to lie down in green pastures: he leadeth me beside the still waters.",
@@ -57,6 +58,31 @@
       "Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.",
       "Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.",
       "Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the LORD for ever."
+    ].join("\n")
+  };
+
+  // src/data/samplePsalm21.ts
+  var PSALM_21_STARTER = {
+    type: "bible",
+    title: "No Devices of Evil Shall Work Against Me (Psalm 21)",
+    bibleReference: "Psalm 21",
+    versionHint: "KJV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=KJV",
+    description: "The king shall joy in thy strength, O LORD\u2026they imagined a mischievous device, which they are not able to perform",
+    text: [
+      "The king shall joy in thy strength, O LORD; and in thy salvation how greatly shall he rejoice!",
+      "Thou hast given him his heart's desire, and hast not withholden the request of his lips. Selah.",
+      "For thou preventest him with the blessings of goodness: thou settest a crown of pure gold on his head.",
+      "He asked life of thee, and thou gavest it him, even length of days for ever and ever.",
+      "His glory is great in thy salvation: honour and majesty hast thou laid upon him.",
+      "For thou hast made him most blessed for ever: thou hast made him exceeding glad with thy countenance.",
+      "For the king trusteth in the LORD, and through the mercy of the most High he shall not be moved.",
+      "Thine hand shall find out all thine enemies: thy right hand shall find out those that hate thee.",
+      "Thou shalt make them as a fiery oven in the time of thine anger: the LORD shall swallow them up in his wrath, and the fire shall devour them.",
+      "Their fruit shalt thou destroy from the earth, and their seed from among the children of men.",
+      "For they intended evil against thee: they imagined a mischievous device, which they are not able to perform.",
+      "Therefore shalt thou make them turn their back, when thou shalt make ready thine arrows upon thy strings against the face of them.",
+      "Be thou exalted, LORD, in thine own strength: so will we sing and praise thy power."
     ].join("\n")
   };
 
@@ -106,6 +132,17 @@
       "I am crucified with Christ: nevertheless I live; yet not I, but Christ liveth in me: and the life which I now live in the flesh I live by the faith of the Son of God, who loved me, and gave himself for me."
     ].join("\n")
   };
+  var OUR_LIBRARY = [
+    { key: "psalm91", starter: PSALM_91_STARTER },
+    { key: "psalm23", starter: PSALM_23_STARTER },
+    { key: "psalm21", starter: PSALM_21_STARTER },
+    { key: "armor-of-god", starter: ARMOR_OF_GOD_STARTER },
+    { key: "daily-bread", starter: DAILY_BREAD_PRAYER_STARTER },
+    { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER }
+  ];
+  function starterByKey(key) {
+    return OUR_LIBRARY.find((item) => item.key === key)?.starter;
+  }
 
   // src/lib/share.ts
   function buildSharePayload(passage, opts = {}) {
@@ -228,6 +265,7 @@
       bibleReference: p.bibleReference,
       versionHint: p.versionHint,
       bibleGatewayUrl: p.bibleGatewayUrl,
+      description: p.description?.trim() || void 0,
       text: p.text || "",
       createdAt: p.createdAt || now,
       updatedAt: p.updatedAt || now,
@@ -283,6 +321,7 @@
         bibleReference: input.bibleReference?.trim() || void 0,
         versionHint: input.versionHint?.trim() || void 0,
         bibleGatewayUrl: input.bibleGatewayUrl?.trim() || void 0,
+        description: input.description?.trim() || void 0,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now
       });
@@ -341,9 +380,13 @@
   function typeLabel(t) {
     return t.replaceAll("_", " ");
   }
+  var libraryTab = "our";
+  var libraryToast = "";
   function renderLibrary(root, repo2, callbacks, editing) {
     const passages = repo2.listPassages();
     const count = passages.length;
+    const ourList = `<ul class="passage-list">${OUR_LIBRARY.map((item) => renderItem(item.starter, { catalogKey: item.key })).join("")}</ul>`;
+    const myList = count === 0 ? `<p class="empty">No passages yet. Add one above, or copy one from Our Library.</p>` : `<ul class="passage-list">${passages.map((p) => renderItem(p)).join("")}</ul>`;
     root.innerHTML = `
     <div class="app-shell">
     <header class="topbar">
@@ -388,17 +431,16 @@
       </form>
     </section>
     <section class="panel" id="library-panel">
-      <div class="row library-head">
-        <h2 style="margin:0">Your library (${count})</h2>
-        <div class="row starter-row">
-          <button class="btn secondary" type="button" id="add-psalm91">Psalm 91</button>
-          <button class="btn secondary" type="button" id="add-psalm23">Psalm 23</button>
-          <button class="btn secondary" type="button" id="add-armor-of-god">Armor of God</button>
-          <button class="btn secondary" type="button" id="add-daily-bread">Daily Bread Prayer</button>
-          <button class="btn secondary" type="button" id="add-coming-to-christ">Coming to Christ</button>
+      <div class="library-head">
+        <div class="library-tabs" role="tablist" aria-label="Library">
+          <button class="btn secondary${libraryTab === "our" ? " nav-current" : ""}" type="button" id="tab-our" role="tab" aria-selected="${libraryTab === "our"}" aria-controls="library-tab-panel">Our Library</button>
+          <button class="btn secondary${libraryTab === "mine" ? " nav-current" : ""}" type="button" id="tab-mine" role="tab" aria-selected="${libraryTab === "mine"}" aria-controls="library-tab-panel">My Library (${count})</button>
         </div>
       </div>
-      ${count === 0 ? `<p class="empty">No passages yet. Add one above, or use a starter.</p>` : `<ul class="passage-list">${passages.map(renderItem).join("")}</ul>`}
+      <div id="library-tab-panel" role="tabpanel">
+        ${libraryTab === "our" ? ourList : myList}
+      </div>
+      <p class="toast" id="library-toast" hidden></p>
     </section>
     </div>
   `;
@@ -419,6 +461,7 @@
         toast.hidden = false;
         toast.textContent = `Saved \u201C${saved.title}\u201D.`;
       }
+      libraryTab = "mine";
       renderLibrary(root, repo2, callbacks, null);
     });
     root.querySelector("#cancel-edit")?.addEventListener("click", () => {
@@ -435,20 +478,13 @@
     root.querySelector("#goto-scoreboard")?.addEventListener("click", () => {
       callbacks.onScoreboard?.();
     });
-    root.querySelector("#add-psalm91")?.addEventListener("click", () => {
-      callbacks.onPsalm91Starter?.();
+    root.querySelector("#tab-our")?.addEventListener("click", () => {
+      libraryTab = "our";
+      renderLibrary(root, repo2, callbacks, editing);
     });
-    root.querySelector("#add-psalm23")?.addEventListener("click", () => {
-      callbacks.onPsalm23Starter?.();
-    });
-    root.querySelector("#add-armor-of-god")?.addEventListener("click", () => {
-      callbacks.onArmorOfGodStarter?.();
-    });
-    root.querySelector("#add-daily-bread")?.addEventListener("click", () => {
-      callbacks.onDailyBreadStarter?.();
-    });
-    root.querySelector("#add-coming-to-christ")?.addEventListener("click", () => {
-      callbacks.onComingToChristStarter?.();
+    root.querySelector("#tab-mine")?.addEventListener("click", () => {
+      libraryTab = "mine";
+      renderLibrary(root, repo2, callbacks, editing);
     });
     root.querySelector("#export-data")?.addEventListener("click", () => {
       downloadText("memorize-script-backup.json", exportDocument(repo2.load()));
@@ -465,6 +501,60 @@
       } catch (err) {
         alert(err instanceof Error ? err.message : "Import failed");
       }
+    });
+    function showLibraryToast(message) {
+      const toast = root.querySelector("#library-toast");
+      if (!toast) return;
+      toast.hidden = false;
+      toast.textContent = message;
+    }
+    if (libraryToast) {
+      showLibraryToast(libraryToast);
+      libraryToast = "";
+    }
+    root.querySelectorAll("[data-copy-starter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const starter = starterByKey(btn.dataset.copyStarter);
+        if (!starter) return;
+        const existed = Boolean(callbacks.onFindStarter?.(starter));
+        const saved = callbacks.onApplyStarter?.(starter);
+        if (!saved) return;
+        libraryToast = existed ? `\u201C${starter.title}\u201D is already in My Library.` : `Copied \u201C${starter.title}\u201D to My Library.`;
+        renderLibrary(root, repo2, callbacks, editing);
+      });
+    });
+    root.querySelectorAll("[data-open-starter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const starter = starterByKey(btn.dataset.openStarter);
+        if (!starter) return;
+        const saved = callbacks.onApplyStarter?.(starter);
+        if (saved) callbacks.onOpenPassage(saved.id);
+      });
+    });
+    root.querySelectorAll("[data-edit-starter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const starter = starterByKey(btn.dataset.editStarter);
+        if (!starter) return;
+        const saved = callbacks.onApplyStarter?.(starter);
+        if (saved) {
+          libraryTab = "mine";
+          renderLibrary(root, repo2, callbacks, saved);
+        }
+      });
+    });
+    root.querySelectorAll("[data-delete-starter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const starter = starterByKey(btn.dataset.deleteStarter);
+        if (!starter) return;
+        const match = callbacks.onFindStarter?.(starter);
+        if (!match) {
+          alert(`\u201C${starter.title}\u201D is not in My Library yet.`);
+          return;
+        }
+        if (!confirm(`Delete \u201C${match.title}\u201D from My Library?`)) return;
+        repo2.deletePassage(match.id);
+        renderLibrary(root, repo2, callbacks, null);
+      });
     });
     root.querySelectorAll("[data-open]").forEach((btn) => {
       btn.addEventListener("click", () => callbacks.onOpenPassage(btn.dataset.open));
@@ -486,19 +576,34 @@
       });
     });
   }
-  function renderItem(p) {
-    const preview = p.text.trim().slice(0, 80) || "(no text yet)";
+  function passagePreview(p) {
+    const custom = p.description?.trim();
+    if (custom) return { text: custom, ellipsis: "" };
+    const body = p.text.trim();
+    if (!body) return { text: "(no text yet)", ellipsis: "" };
+    return { text: body.slice(0, 80), ellipsis: body.length > 80 ? "\u2026" : "" };
+  }
+  function renderItem(p, opts = {}) {
+    const { text: preview, ellipsis } = passagePreview(p);
     const meta = [typeLabel(p.type), p.bibleReference].filter(Boolean).join(" \xB7 ");
+    const key = opts.catalogKey;
+    const openAttr = key ? `data-open-starter="${key}"` : `data-open="${p.id}"`;
+    const editAttr = key ? `data-edit-starter="${key}"` : `data-edit="${p.id}"`;
+    const deleteAttr = key ? `data-delete-starter="${key}"` : `data-delete="${p.id}"`;
+    const copyBtn = key ? `<button class="copy-to-library" type="button" data-copy-starter="${key}">Copy to my library</button>` : "";
     return `<li class="passage-item">
     <div>
       <h3>${escapeHtml(p.title)}</h3>
       <p>${escapeHtml(meta)}</p>
-      <p>${escapeHtml(preview)}${p.text.trim().length > 80 ? "\u2026" : ""}</p>
+      <p>${escapeHtml(preview)}${ellipsis}</p>
     </div>
-    <div class="row">
-      <button class="btn" type="button" data-open="${p.id}">Open</button>
-      <button class="btn secondary" type="button" data-edit="${p.id}">Edit</button>
-      <button class="btn danger" type="button" data-delete="${p.id}">Delete</button>
+    <div class="passage-actions">
+      <div class="passage-actions-row">
+        <button class="btn" type="button" ${openAttr}>Open</button>
+        <button class="btn secondary" type="button" ${editAttr}>Edit</button>
+        <button class="btn danger" type="button" ${deleteAttr}>Delete</button>
+      </div>
+      ${copyBtn}
     </div>
   </li>`;
   }
@@ -1898,8 +2003,8 @@
                     <textarea data-prompt="${seg.id}" readonly>${esc2(prompt)}</textarea>
                   </label>
                   <div class="row prompt-actions">
-                    <button class="btn secondary" type="button" data-copy="${seg.id}">Copy image prompt</button>
-                    <a class="btn secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
+                    <button class="btn secondary" type="button" data-copy="${seg.id}">1. Copy image prompt</button>
+                    <a class="btn secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">2. Open ChatGPT</a>
                   </div>
                   <label>
                     <span class="label-row">
@@ -2317,13 +2422,7 @@
     "recall",
     "master"
   ]);
-  var STARTERS = [
-    PSALM_91_STARTER,
-    PSALM_23_STARTER,
-    ARMOR_OF_GOD_STARTER,
-    DAILY_BREAD_PRAYER_STARTER,
-    COMING_TO_CHRIST_STARTER
-  ];
+  var STARTERS = OUR_LIBRARY.map((item) => item.starter);
   function findStarterMatch(starter) {
     return repo.listPassages().find((p) => {
       if (starter.bibleReference && p.bibleReference === starter.bibleReference) return true;
@@ -2363,31 +2462,8 @@
         history.replaceState(null, "", "#scoreboard");
         mount();
       },
-      onPsalm91Starter: () => {
-        const created = applyStarter(PSALM_91_STARTER);
-        history.replaceState(null, "", `#passage/${created.id}/read`);
-        mount();
-      },
-      onPsalm23Starter: () => {
-        const created = applyStarter(PSALM_23_STARTER);
-        history.replaceState(null, "", `#passage/${created.id}/read`);
-        mount();
-      },
-      onArmorOfGodStarter: () => {
-        const created = applyStarter(ARMOR_OF_GOD_STARTER);
-        history.replaceState(null, "", `#passage/${created.id}/read`);
-        mount();
-      },
-      onDailyBreadStarter: () => {
-        const created = applyStarter(DAILY_BREAD_PRAYER_STARTER);
-        history.replaceState(null, "", `#passage/${created.id}/read`);
-        mount();
-      },
-      onComingToChristStarter: () => {
-        const created = applyStarter(COMING_TO_CHRIST_STARTER);
-        history.replaceState(null, "", `#passage/${created.id}/read`);
-        mount();
-      }
+      onApplyStarter: (starter) => applyStarter(starter),
+      onFindStarter: (starter) => findStarterMatch(starter)
     });
     wrapShell();
     if (prefill) {

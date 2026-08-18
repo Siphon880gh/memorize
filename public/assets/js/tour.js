@@ -14,13 +14,13 @@
       prepare: goLibrary,
     },
     {
-      selector: "#library-panel, #add-daily-bread, #add-psalm91",
-      text: "Starters live in your library: Daily Bread Prayer (ready to train) or Psalm 91 (paste your own wording).",
+      selector: "#library-panel, #tab-our",
+      text: "Our Library has ready-to-copy passages. My Library holds the ones you add or copy.",
       prepare: goLibrary,
     },
     {
-      selector: "[data-open], #add-daily-bread, .passage-list",
-      text: "Open a passage from your library — or tap a starter first — to enter training.",
+      selector: "[data-open], [data-open-starter], .passage-list",
+      text: "Open a passage to train, or copy one from Our Library into My Library.",
       prepare: goLibrary,
     },
     {
@@ -77,15 +77,15 @@
     if (already) return;
 
     goLibrary();
-    let openBtn = document.querySelector("[data-open]");
+    let openBtn = document.querySelector("[data-open], [data-open-starter]");
     if (!openBtn) {
-      const starter = document.querySelector("#add-daily-bread");
+      const starter = document.querySelector("[data-copy-starter], #tab-our");
       if (starter) {
         starter.click();
         return;
       }
     }
-    openBtn = document.querySelector("[data-open]");
+    openBtn = document.querySelector("[data-open], [data-open-starter]");
     if (openBtn) openBtn.click();
   }
 
