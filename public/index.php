@@ -62,6 +62,8 @@ $baseHref = ($base === '' ? '/' : $base . '/');
           <a target="_blank" href="https://www.linkedin.com/in/weng-fung/" rel="nofollow">LinkedIn</a>
           <a target="_blank" href="https://www.youtube.com/@WayneTeachesCode/" rel="nofollow">YouTube</a>
         </div>
+        <p class="credits-legal">Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.</p>
+        <p class="credits-legal">Thank you, Crossway, for letting us include it. <a href="https://www.esv.org/" target="_blank" rel="noopener noreferrer">www.esv.org</a></p>
       </div>
     </footer>
 

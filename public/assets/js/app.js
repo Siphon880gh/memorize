@@ -5,14 +5,14 @@
     type: "bible",
     title: "Daily Bread Prayer",
     bibleReference: "Matthew 6:9-13",
-    versionHint: "KJV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Matthew%206%3A9-13&version=KJV",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Matthew%206%3A9-13&version=ESV",
     text: [
-      "Our Father which art in heaven, Hallowed be thy name.",
-      "Thy kingdom come. Thy will be done in earth, as it is in heaven.",
-      "Give us this day our daily bread.",
-      "And forgive us our debts, as we forgive our debtors.",
-      "And lead us not into temptation, but deliver us from evil: For thine is the kingdom, and the power, and the glory, for ever. Amen."
+      "Our Father in heaven, hallowed be your name.",
+      "Your kingdom come, your will be done, on earth as it is in heaven.",
+      "Give us this day our daily bread,",
+      "and forgive us our debts, as we also have forgiven our debtors.",
+      "And lead us not into temptation, but deliver us from evil."
     ].join("\n")
   };
 
@@ -21,25 +21,25 @@
     type: "bible",
     title: "My Refuge and My Fortress (Psalm 91)",
     bibleReference: "Psalm 91",
-    versionHint: "KJV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2091&version=KJV",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2091&version=ESV",
     text: [
-      "He that dwelleth in the secret place of the most High shall abide under the shadow of the Almighty.",
-      "I will say of the LORD, He is my refuge and my fortress: my God; in him will I trust.",
-      "Surely he shall deliver thee from the snare of the fowler, and from the noisome pestilence.",
-      "He shall cover thee with his feathers, and under his wings shalt thou trust: his truth shall be thy shield and buckler.",
-      "Thou shalt not be afraid for the terror by night; nor for the arrow that flieth by day;",
-      "Nor for the pestilence that walketh in darkness; nor for the destruction that wasteth at noonday.",
-      "A thousand shall fall at thy side, and ten thousand at thy right hand; but it shall not come nigh thee.",
-      "Only with thine eyes shalt thou behold and see the reward of the wicked.",
-      "Because thou hast made the LORD, which is my refuge, even the most High, thy habitation;",
-      "There shall no evil befall thee, neither shall any plague come nigh thy dwelling.",
-      "For he shall give his angels charge over thee, to keep thee in all thy ways.",
-      "They shall bear thee up in their hands, lest thou dash thy foot against a stone.",
-      "Thou shalt tread upon the lion and adder: the young lion and the dragon shalt thou trample under feet.",
-      "Because he hath set his love upon me, therefore will I deliver him: I will set him on high, because he hath known my name.",
-      "He shall call upon me, and I will answer him: I will be with him in trouble; I will deliver him, and honour him.",
-      "With long life will I satisfy him, and shew him my salvation."
+      "He who dwells in the shelter of the Most High will abide in the shadow of the Almighty.",
+      "I will say to the LORD, “My refuge and my fortress, my God, in whom I trust.”",
+      "For he will deliver you from the snare of the fowler and from the deadly pestilence.",
+      "He will cover you with his pinions, and under his wings you will find refuge; his faithfulness is a shield and buckler.",
+      "You will not fear the terror of the night, nor the arrow that flies by day,",
+      "nor the pestilence that stalks in darkness, nor the destruction that wastes at noonday.",
+      "A thousand may fall at your side, ten thousand at your right hand, but it will not come near you.",
+      "You will only look with your eyes and see the recompense of the wicked.",
+      "Because you have made the LORD your dwelling place— the Most High, who is my refuge—",
+      "no evil shall be allowed to befall you, no plague come near your tent.",
+      "For he will command his angels concerning you to guard you in all your ways.",
+      "On their hands they will bear you up, lest you strike your foot against a stone.",
+      "You will tread on the lion and the adder; the young lion and the serpent you will trample underfoot.",
+      "“Because he holds fast to me in love, I will deliver him; I will protect him, because he knows my name.",
+      "When he calls to me, I will answer him; I will be with him in trouble; I will rescue him and honor him.",
+      "With long life I will satisfy him and show him my salvation.”"
     ].join("\n")
   };
 
@@ -48,16 +48,17 @@
     type: "bible",
     title: "The Lord is My Shepherd (Psalm 23)",
     bibleReference: "Psalm 23",
-    versionHint: "KJV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=KJV",
-    description: "The LORD is my shepherd; I shall not want. He maketh me to lie down in green pastures\u2026though I walk through the valley of the shadow of death",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=ESV",
+    description:
+      "The LORD is my shepherd; I shall not want. He makes me lie down in green pastures\u2026Even though I walk through the valley of the shadow of death",
     text: [
       "The LORD is my shepherd; I shall not want.",
-      "He maketh me to lie down in green pastures: he leadeth me beside the still waters.",
-      "He restoreth my soul: he leadeth me in the paths of righteousness for his name's sake.",
-      "Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.",
-      "Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.",
-      "Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the LORD for ever."
+      "He makes me lie down in green pastures. He leads me beside still waters.",
+      "He restores my soul. He leads me in paths of righteousness for his name’s sake.",
+      "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me.",
+      "You prepare a table before me in the presence of my enemies; you anoint my head with oil; my cup overflows.",
+      "Surely goodness and mercy shall follow me all the days of my life, and I shall dwell in the house of the LORD forever."
     ].join("\n")
   };
 
@@ -66,23 +67,24 @@
     type: "bible",
     title: "No Devices of Evil Shall Work Against Me (Psalm 21)",
     bibleReference: "Psalm 21",
-    versionHint: "KJV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=KJV",
-    description: "The king shall joy in thy strength, O LORD\u2026they imagined a mischievous device, which they are not able to perform",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=ESV",
+    description:
+      "O LORD, in your strength the king rejoices\u2026Though they plan evil against you, though they devise mischief, they will not succeed.",
     text: [
-      "The king shall joy in thy strength, O LORD; and in thy salvation how greatly shall he rejoice!",
-      "Thou hast given him his heart's desire, and hast not withholden the request of his lips. Selah.",
-      "For thou preventest him with the blessings of goodness: thou settest a crown of pure gold on his head.",
-      "He asked life of thee, and thou gavest it him, even length of days for ever and ever.",
-      "His glory is great in thy salvation: honour and majesty hast thou laid upon him.",
-      "For thou hast made him most blessed for ever: thou hast made him exceeding glad with thy countenance.",
-      "For the king trusteth in the LORD, and through the mercy of the most High he shall not be moved.",
-      "Thine hand shall find out all thine enemies: thy right hand shall find out those that hate thee.",
-      "Thou shalt make them as a fiery oven in the time of thine anger: the LORD shall swallow them up in his wrath, and the fire shall devour them.",
-      "Their fruit shalt thou destroy from the earth, and their seed from among the children of men.",
-      "For they intended evil against thee: they imagined a mischievous device, which they are not able to perform.",
-      "Therefore shalt thou make them turn their back, when thou shalt make ready thine arrows upon thy strings against the face of them.",
-      "Be thou exalted, LORD, in thine own strength: so will we sing and praise thy power."
+      "O LORD, in your strength the king rejoices, and in your salvation how greatly he exults!",
+      "You have given him his heart’s desire and have not withheld the request of his lips. Selah",
+      "For you meet him with rich blessings; you set a crown of fine gold upon his head.",
+      "He asked life of you; you gave it to him, length of days forever and ever.",
+      "His glory is great through your salvation; splendor and majesty you bestow on him.",
+      "For you make him most blessed forever; you make him glad with the joy of your presence.",
+      "For the king trusts in the LORD, and through the steadfast love of the Most High he shall not be moved.",
+      "Your hand will find out all your enemies; your right hand will find out those who hate you.",
+      "You will make them as a blazing oven when you appear. The LORD will swallow them up in his wrath, and fire will consume them.",
+      "You will destroy their descendants from the earth, and their offspring from among the children of man.",
+      "Though they plan evil against you, though they devise mischief, they will not succeed.",
+      "For you will put them to flight; you will aim at their faces with your bows.",
+      "Be exalted, O LORD, in your strength! We will sing and praise your power."
     ].join("\n")
   };
 
@@ -91,18 +93,20 @@
     type: "bible",
     title: "Armor of God",
     bibleReference: "Ephesians 6:10-18",
-    versionHint: "KJV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Ephesians%206%3A10-18&version=KJV",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Ephesians%206%3A10-18&version=ESV",
+    description:
+      "Put on the whole armor of God, that you may be able to stand against the schemes of the devil.",
     text: [
-      "Finally, my brethren, be strong in the Lord, and in the power of his might.",
-      "Put on the whole armour of God, that ye may be able to stand against the wiles of the devil.",
-      "For we wrestle not against flesh and blood, but against principalities, against powers, against the rulers of the darkness of this world, against spiritual wickedness in high places.",
-      "Wherefore take unto you the whole armour of God, that ye may be able to withstand in the evil day, and having done all, to stand.",
-      "Stand therefore, having your loins girt about with truth, and having on the breastplate of righteousness;",
-      "And your feet shod with the preparation of the gospel of peace;",
-      "Above all, taking the shield of faith, wherewith ye shall be able to quench all the fiery darts of the wicked.",
-      "And take the helmet of salvation, and the sword of the Spirit, which is the word of God:",
-      "Praying always with all prayer and supplication in the Spirit, and watching thereunto with all perseverance and supplication for all saints;"
+      "Finally, be strong in the Lord and in the strength of his might.",
+      "Put on the whole armor of God, that you may be able to stand against the schemes of the devil.",
+      "For we do not wrestle against flesh and blood, but against the rulers, against the authorities, against the cosmic powers over this present darkness, against the spiritual forces of evil in the heavenly places.",
+      "Therefore take up the whole armor of God, that you may be able to withstand in the evil day, and having done all, to stand firm.",
+      "Stand therefore, having fastened on the belt of truth, and having put on the breastplate of righteousness,",
+      "and, as shoes for your feet, having put on the readiness given by the gospel of peace.",
+      "In all circumstances take up the shield of faith, with which you can extinguish all the flaming darts of the evil one;",
+      "and take the helmet of salvation, and the sword of the Spirit, which is the word of God,",
+      "praying at all times in the Spirit, with all prayer and supplication. To that end, keep alert with all perseverance, making supplication for all the saints,"
     ].join("\n")
   };
 
@@ -111,25 +115,25 @@
     type: "bible",
     title: "Coming to Christ",
     bibleReference: "Romans 3:23; 6:23; 5:8; 10:9-13; 1 John 1:9; Acts 2:38; John 14:15-17; 16:7-8; Galatians 2:20",
-    versionHint: "KJV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Romans%203%3A23%3BRomans%206%3A23%3BRomans%205%3A8%3BRomans%2010%3A9-13%3B1%20John%201%3A9%3BActs%202%3A38%3BJohn%2014%3A15-17%3BJohn%2016%3A7-8%3BGalatians%202%3A20&version=KJV",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Romans%203%3A23%3BRomans%206%3A23%3BRomans%205%3A8%3BRomans%2010%3A9-13%3B1%20John%201%3A9%3BActs%202%3A38%3BJohn%2014%3A15-17%3BJohn%2016%3A7-8%3BGalatians%202%3A20&version=ESV",
     text: [
-      "For all have sinned, and come short of the glory of God;",
-      "For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord.",
-      "But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.",
-      "That if thou shalt confess with thy mouth the Lord Jesus, and shalt believe in thine heart that God hath raised him from the dead, thou shalt be saved.",
-      "For with the heart man believeth unto righteousness; and with the mouth confession is made unto salvation.",
-      "For the scripture saith, Whosoever believeth on him shall not be ashamed.",
-      "For there is no difference between the Jew and the Greek: for the same Lord over all is rich unto all that call upon him.",
-      "For whosoever shall call upon the name of the Lord shall be saved.",
-      "If we confess our sins, he is faithful and just to forgive us our sins, and to cleanse us from all unrighteousness.",
-      "Then Peter said unto them, Repent, and be baptized every one of you in the name of Jesus Christ for the remission of sins, and ye shall receive the gift of the Holy Ghost.",
-      "If ye love me, keep my commandments.",
-      "And I will pray the Father, and he shall give you another Comforter, that he may abide with you for ever;",
-      "Even the Spirit of truth; whom the world cannot receive, because it seeth him not, neither knoweth him: but ye know him; for he dwelleth with you, and shall be in you.",
-      "Nevertheless I tell you the truth; It is expedient for you that I go away: for if I go not away, the Comforter will not come unto you; but if I depart, I will send him unto you.",
-      "And when he is come, he will reprove the world of sin, and of righteousness, and of judgment:",
-      "I am crucified with Christ: nevertheless I live; yet not I, but Christ liveth in me: and the life which I now live in the flesh I live by the faith of the Son of God, who loved me, and gave himself for me."
+      "for all have sinned and fall short of the glory of God,",
+      "For the wages of sin is death, but the free gift of God is eternal life in Christ Jesus our Lord.",
+      "but God shows his love for us in that while we were still sinners, Christ died for us.",
+      "because, if you confess with your mouth that Jesus is Lord and believe in your heart that God raised him from the dead, you will be saved.",
+      "For with the heart one believes and is justified, and with the mouth one confesses and is saved.",
+      "For the Scripture says, “Everyone who believes in him will not be put to shame.”",
+      "For there is no distinction between Jew and Greek; for the same Lord is Lord of all, bestowing his riches on all who call on him.",
+      "For “everyone who calls on the name of the Lord will be saved.”",
+      "If we confess our sins, he is faithful and just to forgive us our sins and to cleanse us from all unrighteousness.",
+      "And Peter said to them, “Repent and be baptized every one of you in the name of Jesus Christ for the forgiveness of your sins, and you will receive the gift of the Holy Spirit.",
+      "“If you love me, you will keep my commandments.",
+      "And I will ask the Father, and he will give you another Helper, to be with you forever,",
+      "even the Spirit of truth, whom the world cannot receive, because it neither sees him nor knows him. You know him, for he dwells with you and will be in you.",
+      "Nevertheless, I tell you the truth: it is to your advantage that I go away, for if I do not go away, the Helper will not come to you. But if I go, I will send him to you.",
+      "And when he comes, he will convict the world concerning sin and righteousness and judgment:",
+      "I have been crucified with Christ. It is no longer I who live, but Christ who lives in me. And the life I now live in the flesh I live by faith in the Son of God, who loved me and gave himself for me."
     ].join("\n")
   };
 
@@ -138,12 +142,13 @@
     type: "bible",
     title: "Resist the Devil",
     bibleReference: "James 4:7-8",
-    versionHint: "KJV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=James%204%3A7-8&version=KJV",
-    description: "Submit yourselves therefore to God. Resist the devil, and he will flee from you.",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=James%204%3A7-8&version=ESV",
+    description:
+      "Submit yourselves therefore to God. Resist the devil, and he will flee from you.",
     text: [
       "Submit yourselves therefore to God. Resist the devil, and he will flee from you.",
-      "Draw nigh to God, and he will draw nigh to you. Cleanse your hands, ye sinners; and purify your hearts, ye double minded."
+      "Draw near to God, and he will draw near to you. Cleanse your hands, you sinners, and purify your hearts, you double-minded."
     ].join("\n")
   };
 
@@ -151,13 +156,14 @@
   var GET_BEHIND_ME_SATAN_STARTER = {
     type: "bible",
     title: "Get Behind Me, Satan",
-    bibleReference: "Luke 4:8; Matthew 16:23",
-    versionHint: "KJV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Luke%204%3A8%3BMatthew%2016%3A23&version=KJV",
-    description: "Get thee behind me, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve",
+    bibleReference: "Matthew 4:10; Matthew 16:23",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Matthew%204%3A10%3BMatthew%2016%3A23&version=ESV",
+    description:
+      "Get behind me, Satan! You are a hindrance to me. For you are not setting your mind on the things of God, but on the things of man.",
     text: [
-      "And Jesus answered and said unto him, Get thee behind me, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.",
-      "But he turned, and said unto Peter, Get thee behind me, Satan: thou art an offence unto me: for thou savourest not the things that be of God, but those that be of men."
+      "Then Jesus said to him, “Be gone, Satan! For it is written, “‘You shall worship the Lord your God and him only shall you serve.’”",
+      "But he turned and said to Peter, “Get behind me, Satan! You are a hindrance to me. For you are not setting your mind on the things of God, but on the things of man.”"
     ].join("\n")
   };
   var OUR_LIBRARY = [
@@ -448,7 +454,7 @@
           <input name="bibleReference" placeholder="Psalm 91" value="${escapeAttr(editing?.bibleReference ?? "")}" />
         </label>
         <label>Version hint (optional)
-          <input name="versionHint" placeholder="NIV" value="${escapeAttr(editing?.versionHint ?? "")}" />
+          <input name="versionHint" placeholder="ESV" value="${escapeAttr(editing?.versionHint ?? "")}" />
         </label>
         <label>Passage text
           <textarea name="text" required placeholder="Paste the wording you want to memorize">${escapeHtml(editing?.text ?? "")}</textarea>

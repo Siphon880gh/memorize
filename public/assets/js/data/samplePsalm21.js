@@ -2,24 +2,24 @@ const PSALM_21_STARTER = {
   type: "bible",
   title: "No Devices of Evil Shall Work Against Me (Psalm 21)",
   bibleReference: "Psalm 21",
-  versionHint: "KJV",
-  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=KJV",
+  versionHint: "ESV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=ESV",
   description:
-    "The king shall joy in thy strength, O LORD\u2026they imagined a mischievous device, which they are not able to perform",
+    "O LORD, in your strength the king rejoices\u2026Though they plan evil against you, though they devise mischief, they will not succeed.",
   text: [
-    "The king shall joy in thy strength, O LORD; and in thy salvation how greatly shall he rejoice!",
-    "Thou hast given him his heart's desire, and hast not withholden the request of his lips. Selah.",
-    "For thou preventest him with the blessings of goodness: thou settest a crown of pure gold on his head.",
-    "He asked life of thee, and thou gavest it him, even length of days for ever and ever.",
-    "His glory is great in thy salvation: honour and majesty hast thou laid upon him.",
-    "For thou hast made him most blessed for ever: thou hast made him exceeding glad with thy countenance.",
-    "For the king trusteth in the LORD, and through the mercy of the most High he shall not be moved.",
-    "Thine hand shall find out all thine enemies: thy right hand shall find out those that hate thee.",
-    "Thou shalt make them as a fiery oven in the time of thine anger: the LORD shall swallow them up in his wrath, and the fire shall devour them.",
-    "Their fruit shalt thou destroy from the earth, and their seed from among the children of men.",
-    "For they intended evil against thee: they imagined a mischievous device, which they are not able to perform.",
-    "Therefore shalt thou make them turn their back, when thou shalt make ready thine arrows upon thy strings against the face of them.",
-    "Be thou exalted, LORD, in thine own strength: so will we sing and praise thy power."
+    "O LORD, in your strength the king rejoices, and in your salvation how greatly he exults!",
+    "You have given him his heart’s desire and have not withheld the request of his lips. Selah",
+    "For you meet him with rich blessings; you set a crown of fine gold upon his head.",
+    "He asked life of you; you gave it to him, length of days forever and ever.",
+    "His glory is great through your salvation; splendor and majesty you bestow on him.",
+    "For you make him most blessed forever; you make him glad with the joy of your presence.",
+    "For the king trusts in the LORD, and through the steadfast love of the Most High he shall not be moved.",
+    "Your hand will find out all your enemies; your right hand will find out those who hate you.",
+    "You will make them as a blazing oven when you appear. The LORD will swallow them up in his wrath, and fire will consume them.",
+    "You will destroy their descendants from the earth, and their offspring from among the children of man.",
+    "Though they plan evil against you, though they devise mischief, they will not succeed.",
+    "For you will put them to flight; you will aim at their faces with your bows.",
+    "Be exalted, O LORD, in your strength! We will sing and praise your power."
   ].join("\n")
 };
 export {

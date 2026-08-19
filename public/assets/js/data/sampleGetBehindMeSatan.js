@@ -1,14 +1,14 @@
 const GET_BEHIND_ME_SATAN_STARTER = {
   type: "bible",
   title: "Get Behind Me, Satan",
-  bibleReference: "Luke 4:8; Matthew 16:23",
-  versionHint: "KJV",
-  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Luke%204%3A8%3BMatthew%2016%3A23&version=KJV",
+  bibleReference: "Matthew 4:10; Matthew 16:23",
+  versionHint: "ESV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Matthew%204%3A10%3BMatthew%2016%3A23&version=ESV",
   description:
-    "Get thee behind me, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve",
+    "Get behind me, Satan! You are a hindrance to me. For you are not setting your mind on the things of God, but on the things of man.",
   text: [
-    "And Jesus answered and said unto him, Get thee behind me, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.",
-    "But he turned, and said unto Peter, Get thee behind me, Satan: thou art an offence unto me: for thou savourest not the things that be of God, but those that be of men."
+    "Then Jesus said to him, “Be gone, Satan! For it is written, “‘You shall worship the Lord your God and him only shall you serve.’”",
+    "But he turned and said to Peter, “Get behind me, Satan! You are a hindrance to me. For you are not setting your mind on the things of God, but on the things of man.”"
   ].join("\n")
 };
 export {

@@ -65,7 +65,7 @@ function renderLibrary(root, repo, callbacks, editing) {
           <input name="bibleReference" placeholder="Psalm 91" value="${escapeAttr(editing?.bibleReference ?? "")}" />
         </label>
         <label>Version hint (optional)
-          <input name="versionHint" placeholder="NIV" value="${escapeAttr(editing?.versionHint ?? "")}" />
+          <input name="versionHint" placeholder="ESV" value="${escapeAttr(editing?.versionHint ?? "")}" />
         </label>
         <label>Passage text
           <textarea name="text" required placeholder="Paste the wording you want to memorize">${escapeHtml(editing?.text ?? "")}</textarea>

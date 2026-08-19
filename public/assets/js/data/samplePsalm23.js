@@ -2,17 +2,17 @@ const PSALM_23_STARTER = {
   type: "bible",
   title: "The Lord is My Shepherd (Psalm 23)",
   bibleReference: "Psalm 23",
-  versionHint: "KJV",
-  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=KJV",
+  versionHint: "ESV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=ESV",
   description:
-    "The LORD is my shepherd; I shall not want. He maketh me to lie down in green pastures\u2026though I walk through the valley of the shadow of death",
+    "The LORD is my shepherd; I shall not want. He makes me lie down in green pastures\u2026Even though I walk through the valley of the shadow of death",
   text: [
     "The LORD is my shepherd; I shall not want.",
-    "He maketh me to lie down in green pastures: he leadeth me beside the still waters.",
-    "He restoreth my soul: he leadeth me in the paths of righteousness for his name's sake.",
-    "Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.",
-    "Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.",
-    "Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the LORD for ever."
+    "He makes me lie down in green pastures. He leads me beside still waters.",
+    "He restores my soul. He leads me in paths of righteousness for his name’s sake.",
+    "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me.",
+    "You prepare a table before me in the presence of my enemies; you anoint my head with oil; my cup overflows.",
+    "Surely goodness and mercy shall follow me all the days of my life, and I shall dwell in the house of the LORD forever."
   ].join("\n")
 };
 export {

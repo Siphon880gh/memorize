@@ -22,8 +22,8 @@ if (!training.includes("renderRecall") || !training.includes("renderMaster")) fa
 
 const sample = readFileSync(join(root, "public/assets/js/data/samplePsalm91.js"), "utf8");
 if (!sample.includes("bibleGatewayUrl")) fail("sample missing bibleGatewayUrl");
-if (/He who dwells|Whoever dwells/.test(sample)) fail("sample appears to embed copyrighted NIV body");
-if (!/He that dwelleth/.test(sample) || !/versionHint:\s*"KJV"/.test(sample)) fail("sample missing KJV Psalm 91 text");
+if (/Whoever dwells/.test(sample)) fail("sample appears to embed NIV Psalm 91 body");
+if (!/He who dwells/.test(sample) || !/versionHint:\s*"ESV"/.test(sample)) fail("sample missing ESV Psalm 91 text");
 
 if (errors.length) { console.error("M9 VERIFY FAIL"); errors.forEach((e) => console.error(" -", e)); process.exit(1); }
 console.log("M9 VERIFY PASS");

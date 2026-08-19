@@ -16,8 +16,8 @@ const app = readFileSync(join(root, "public/assets/js/app.js"), "utf8");
 if (!app.includes("scoreboard") || !app.includes("share")) fail("app missing scoreboard/share routes");
 const daily = readFileSync(join(root, "public/assets/js/data/sampleDailyBread.js"), "utf8");
 const psalm = readFileSync(join(root, "public/assets/js/data/samplePsalm91.js"), "utf8");
-if (!/Our Father/.test(daily)) fail("Daily Bread missing KJV text");
-if (!/He that dwelleth/.test(psalm) || !/versionHint:\s*"KJV"/.test(psalm)) fail("Psalm 91 missing KJV text");
+if (!/Our Father in heaven/.test(daily)) fail("Daily Bread missing ESV text");
+if (!/He who dwells/.test(psalm) || !/versionHint:\s*"ESV"/.test(psalm)) fail("Psalm 91 missing ESV text");
 if (!existsSync(join(root, "public/assets/js/data/starters.js"))) fail("missing starters.js");
 if (errors.length) { console.error("P8 VERIFY FAIL"); errors.forEach((e) => console.error(" -", e)); process.exit(1); }
 console.log("P8 VERIFY PASS");

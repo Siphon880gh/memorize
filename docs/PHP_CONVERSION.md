@@ -37,7 +37,7 @@ AGENTS_LOOP-Convert-PHP.md
 
 - [x] Library CRUD
 - [x] Psalm 91 starter (empty text + reference)
-- [x] Daily Bread Prayer starter (KJV text)
+- [x] Daily Bread Prayer starter (ESV text)
 - [x] Stages: read, understand, reduce, visualize, reconstruct, recall, master
 - [x] Progressive hints + stats + scoreboard
 - [x] Share (bible omits body)

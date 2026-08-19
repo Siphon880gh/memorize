@@ -1344,7 +1344,7 @@ label.inline {
   background: var(--paper-2);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  max-width: 22rem;
+  max-width: 36rem;
 }
 
 .credits-body[hidden] {
@@ -1356,6 +1356,21 @@ label.inline {
   font-family: var(--serif);
   font-style: italic;
   color: var(--ink-faint);
+}
+
+.credits-legal {
+  font-style: normal;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.socials + .credits-legal {
+  margin-top: 0.85rem;
+}
+
+.credits-legal a {
+  color: var(--navy);
 }
 
 .socials {
