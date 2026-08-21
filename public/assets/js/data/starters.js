@@ -6,3 +6,4 @@ export { RESIST_THE_DEVIL_STARTER } from "./sampleResistTheDevil.js";
 export { GET_BEHIND_ME_SATAN_STARTER } from "./sampleGetBehindMeSatan.js";
 export { DAILY_BREAD_PRAYER_STARTER } from "./sampleDailyBread.js";
 export { COMING_TO_CHRIST_STARTER } from "./sampleComingToChrist.js";
+export { EXODUS_15_26_STARTER } from "./sampleExodus1526.js";

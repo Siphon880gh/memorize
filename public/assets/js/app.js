@@ -166,6 +166,21 @@
       "But he turned and said to Peter, “Get behind me, Satan! You are a hindrance to me. For you are not setting your mind on the things of God, but on the things of man.”"
     ].join("\n")
   };
+
+  // src/data/sampleExodus1526.ts
+  var EXODUS_15_26_STARTER = {
+    type: "bible",
+    title: "Jehovah Rapha — The LORD Your Healer",
+    bibleReference: "Exodus 15:26",
+    versionHint: "ESV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Exodus%2015%3A26&version=ESV",
+    description:
+      "I am the LORD, your healer.",
+    text: [
+      "If you will diligently listen to the voice of the LORD your God, and do that which is right in his eyes, and give ear to his commandments and keep all his statutes,",
+      "I will put none of the diseases on you that I put on the Egyptians, for I am the LORD, your healer."
+    ].join("\n")
+  };
   var OUR_LIBRARY = [
     { key: "psalm91", starter: PSALM_91_STARTER },
     { key: "psalm23", starter: PSALM_23_STARTER },
@@ -174,7 +189,8 @@
     { key: "resist-the-devil", starter: RESIST_THE_DEVIL_STARTER },
     { key: "get-behind-me-satan", starter: GET_BEHIND_ME_SATAN_STARTER },
     { key: "daily-bread", starter: DAILY_BREAD_PRAYER_STARTER },
-    { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER }
+    { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER },
+    { key: "exodus-15-26", starter: EXODUS_15_26_STARTER }
   ];
   function starterByKey(key) {
     return OUR_LIBRARY.find((item) => item.key === key)?.starter;

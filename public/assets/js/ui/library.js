@@ -9,7 +9,8 @@ import {
   RESIST_THE_DEVIL_STARTER,
   GET_BEHIND_ME_SATAN_STARTER,
   DAILY_BREAD_PRAYER_STARTER,
-  COMING_TO_CHRIST_STARTER
+  COMING_TO_CHRIST_STARTER,
+  EXODUS_15_26_STARTER
 } from "../data/starters.js";
 const OUR_LIBRARY = [
   { key: "psalm91", starter: PSALM_91_STARTER },
@@ -19,7 +20,8 @@ const OUR_LIBRARY = [
   { key: "resist-the-devil", starter: RESIST_THE_DEVIL_STARTER },
   { key: "get-behind-me-satan", starter: GET_BEHIND_ME_SATAN_STARTER },
   { key: "daily-bread", starter: DAILY_BREAD_PRAYER_STARTER },
-  { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER }
+  { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER },
+  { key: "exodus-15-26", starter: EXODUS_15_26_STARTER }
 ];
 let libraryTab = "our";
 let libraryToast = "";
