@@ -1568,12 +1568,157 @@
   function buildReadBibleContextUrl(passage) {
     return `https://chatgpt.com/?q=${encodeURIComponent(buildReadBibleContextPrompt(passage))}`;
   }
+  function quickStudyWords(text) {
+    return text.match(/[\p{L}\p{N}][\p{L}\p{N}'’\-]*/gu) ?? [];
+  }
+  function quickStudyHint(text, kind) {
+    const words = quickStudyWords(text);
+    const ranked = words.map((word, index) => ({ word, index })).sort((a, b) => b.word.length - a.word.length || a.index - b.index);
+    if (!ranked.length) return "No word hint available.";
+    if (kind === "longest") return ranked[0].word;
+    if (kind === "next") return (ranked[1] ?? ranked[0]).word;
+    const count = kind === "four" ? 4 : 3;
+    const selected = ranked.slice(0, Math.min(count, ranked.length)).map((item) => item.word);
+    return selected.sort((a, b) => a.localeCompare(b, void 0, { sensitivity: "base" })).join(" · ");
+  }
+  function quickStudyCensor(text) {
+    const count = Math.max(3, quickStudyWords(text).length);
+    return Array.from({ length: count }, (_, index) => index % 5 === 4 ? "██████" : "████").join(" ");
+  }
+  function quickStudyHalf(text, half) {
+    const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return "No line text available.";
+    const midpoint = Math.ceil(words.length / 2);
+    const selected = half === "second" ? words.slice(midpoint) : words.slice(0, midpoint);
+    return selected.join(" ") || "No second half available.";
+  }
+  function openQuickStudy(passage) {
+    const lines = passage.segments.map((segment) => segment.text.trim()).filter(Boolean);
+    if (!lines.length) return;
+    openHelpModal(
+      "Quick Study",
+      `<p class="quick-study-intro">Try to recall the active line aloud. If you get stuck, take a word hint before revealing it.</p>
+       <p class="quick-study-progress" id="quick-study-progress" aria-live="polite"></p>
+       <ol class="quick-study-lines" id="quick-study-lines"></ol>
+       <div class="quick-study-controls" id="quick-study-controls">
+         <p class="quick-study-prompt"><strong>Recall this line first.</strong> Need a nudge?</p>
+         <div class="quick-study-hints" aria-label="Word hints">
+           <button class="btn secondary" type="button" data-quick-hint="longest">Longest word</button>
+           <button class="btn secondary" type="button" data-quick-hint="next">Next longest word</button>
+           <button class="btn secondary" type="button" data-quick-hint="three">Three words</button>
+           <button class="btn secondary" type="button" data-quick-hint="four">Four words</button>
+           <button class="btn secondary quick-study-half-button" type="button" id="quick-study-half" aria-pressed="false" aria-controls="quick-study-half-nav">Show half</button>
+         </div>
+         <div class="quick-study-half-nav" id="quick-study-half-nav" aria-label="Choose which half of the line to show" hidden>
+           <button class="quick-study-half-chevron" type="button" id="quick-study-half-first" aria-label="Show first half">‹</button>
+           <span id="quick-study-half-label" aria-live="polite">First half</span>
+           <button class="quick-study-half-chevron" type="button" id="quick-study-half-second" aria-label="Show second half">›</button>
+         </div>
+         <p class="quick-study-cue" id="quick-study-cue" aria-live="polite">No hint used yet.</p>
+         <button class="btn" type="button" id="quick-study-reveal">Reveal line</button>
+       </div>`
+    );
+    const modal = document.getElementById("app-help-modal");
+    if (!modal) return;
+    modal.querySelector(".modal")?.classList.add("modal-quick-study");
+    const modalHeading = modal.querySelector("#help-modal-title");
+    if (modalHeading) {
+      const passageTitle = document.createElement("span");
+      passageTitle.className = "quick-study-title";
+      passageTitle.textContent = passage.title || "Untitled";
+      passageTitle.title = passage.title || "Untitled";
+      modalHeading.appendChild(passageTitle);
+    }
+    const list = modal.querySelector("#quick-study-lines");
+    const progress = modal.querySelector("#quick-study-progress");
+    const controls = modal.querySelector("#quick-study-controls");
+    const cue = modal.querySelector("#quick-study-cue");
+    const reveal = modal.querySelector("#quick-study-reveal");
+    const halfButton = modal.querySelector("#quick-study-half");
+    const halfNav = modal.querySelector("#quick-study-half-nav");
+    const halfFirst = modal.querySelector("#quick-study-half-first");
+    const halfSecond = modal.querySelector("#quick-study-half-second");
+    const halfLabel = modal.querySelector("#quick-study-half-label");
+    let active = 0;
+    let halfVisible = false;
+    let halfSide = "first";
+    const revealed = new Set();
+    const syncHalfHint = () => {
+      if (!cue || active >= lines.length) return;
+      if (!halfVisible) {
+        cue.textContent = "No hint used yet.";
+        if (halfNav) halfNav.hidden = true;
+        halfButton?.setAttribute("aria-pressed", "false");
+        return;
+      }
+      cue.innerHTML = `<span>${halfSide === "first" ? "First" : "Second"} half:</span> <strong>${esc2(quickStudyHalf(lines[active], halfSide))}</strong>`;
+      if (halfNav) halfNav.hidden = false;
+      if (halfLabel) halfLabel.textContent = halfSide === "first" ? "First half" : "Second half";
+      if (halfFirst) halfFirst.disabled = halfSide === "first";
+      if (halfSecond) halfSecond.disabled = halfSide === "second";
+      halfButton?.setAttribute("aria-pressed", "true");
+    };
+    const paint = () => {
+      if (list) {
+        list.innerHTML = lines.map((line, index) => {
+          const isRevealed = revealed.has(index);
+          const isActive = index === active && !isRevealed;
+          const state = isRevealed ? "revealed" : isActive ? "active" : "locked";
+          const content = isRevealed ? esc2(line) : `<span aria-hidden="true">${quickStudyCensor(line)}</span><span class="sr-only">Line ${index + 1} hidden</span>`;
+          return `<li class="quick-study-line is-${state}" aria-current="${isActive ? "step" : "false"}"><span class="quick-study-number">${index + 1}</span><span class="quick-study-text">${content}</span></li>`;
+        }).join("");
+      }
+      const complete = active >= lines.length;
+      if (progress) progress.textContent = complete ? `All ${lines.length} lines revealed. Read them through once more.` : `Line ${active + 1} of ${lines.length}`;
+      if (controls) controls.hidden = complete;
+      if (cue && !complete) cue.textContent = "No hint used yet.";
+      if (reveal && !complete) reveal.textContent = active === lines.length - 1 ? "Reveal final line" : "Reveal line & continue";
+      if (halfButton && !complete) {
+        halfButton.textContent = "Show half";
+        halfButton.setAttribute("aria-label", "Show or hide half of this line");
+        halfButton.setAttribute("aria-pressed", "false");
+      }
+      if (halfNav) halfNav.hidden = true;
+    };
+    modal.querySelectorAll("[data-quick-hint]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!cue || active >= lines.length) return;
+        halfVisible = false;
+        if (halfNav) halfNav.hidden = true;
+        halfButton?.setAttribute("aria-pressed", "false");
+        cue.innerHTML = `<span>Hint:</span> <strong>${esc2(quickStudyHint(lines[active], button.dataset.quickHint))}</strong>`;
+      });
+    });
+    halfButton?.addEventListener("click", () => {
+      if (!cue || active >= lines.length) return;
+      halfVisible = !halfVisible;
+      if (halfVisible) halfSide = "first";
+      syncHalfHint();
+    });
+    halfFirst?.addEventListener("click", () => {
+      halfSide = "first";
+      syncHalfHint();
+    });
+    halfSecond?.addEventListener("click", () => {
+      halfSide = "second";
+      syncHalfHint();
+    });
+    reveal?.addEventListener("click", () => {
+      if (active >= lines.length) return;
+      revealed.add(active);
+      active += 1;
+      halfVisible = false;
+      halfSide = "first";
+      paint();
+    });
+    paint();
+  }
   function renderRead(panel, _repo, passage, onContinue) {
     const empty = passage.segments.length === 0 || !passage.text.trim();
     panel.innerHTML = `
     <div class="read-heading">
       <h2>Read</h2>
-      ${empty ? "" : `<a class="btn secondary read-ai-button" href="${escapeAttr(buildReadBibleContextUrl(passage))}" target="_blank" rel="noopener noreferrer" title="Ask AI to identify this passage, explain its context, and link it in Bible">AI Bible context</a>`}
+      ${empty ? "" : `<span class="read-tools"><button class="btn secondary read-quick-study-button" type="button" id="quick-study">Quick Study</button><a class="btn secondary read-ai-button" href="${escapeAttr(buildReadBibleContextUrl(passage))}" target="_blank" rel="noopener noreferrer" title="Ask AI to identify this passage, explain its context, and link it in Bible">AI Bible context</a></span>`}
     </div>
     ${empty ? `<p class="empty">This passage has no text yet. Go to <strong>Library</strong>, edit it, and paste the wording you want to memorize.</p>
            <div class="row stage-next-row"><button class="btn stage-next" type="button" id="mark-read" disabled>Mark Read complete \u2192 Understand</button></div>` : `<p class="empty">Read the full passage with segment markers. Absorb cadence before reducing.</p>
@@ -1588,6 +1733,7 @@
       if (empty) return;
       onContinue();
     });
+    panel.querySelector("#quick-study")?.addEventListener("click", () => openQuickStudy(passage));
   }
   function renderUnderstand(panel, repo2, passage, onSaved) {
     if (passage.segments.length === 0) {
