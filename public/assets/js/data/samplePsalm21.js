@@ -2,24 +2,24 @@ const PSALM_21_STARTER = {
   type: "bible",
   title: "No Devices of Evil Shall Work Against Me (Psalm 21)",
   bibleReference: "Psalm 21",
-  versionHint: "ESV",
-  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=ESV",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=NIV",
   description:
-    "O LORD, in your strength the king rejoices\u2026Though they plan evil against you, though they devise mischief, they will not succeed.",
+    "The king rejoices in your strength, LORD\u2026Though they plot evil against you and devise wicked schemes, they cannot succeed.",
   text: [
-    "O LORD, in your strength the king rejoices, and in your salvation how greatly he exults!",
-    "You have given him his heart’s desire and have not withheld the request of his lips. Selah",
-    "For you meet him with rich blessings; you set a crown of fine gold upon his head.",
-    "He asked life of you; you gave it to him, length of days forever and ever.",
-    "His glory is great through your salvation; splendor and majesty you bestow on him.",
-    "For you make him most blessed forever; you make him glad with the joy of your presence.",
-    "For the king trusts in the LORD, and through the steadfast love of the Most High he shall not be moved.",
-    "Your hand will find out all your enemies; your right hand will find out those who hate you.",
-    "You will make them as a blazing oven when you appear. The LORD will swallow them up in his wrath, and fire will consume them.",
-    "You will destroy their descendants from the earth, and their offspring from among the children of man.",
-    "Though they plan evil against you, though they devise mischief, they will not succeed.",
-    "For you will put them to flight; you will aim at their faces with your bows.",
-    "Be exalted, O LORD, in your strength! We will sing and praise your power."
+    "The king rejoices in your strength, LORD. How great is his joy in the victories you give!",
+    "You have granted him his heart’s desire and have not withheld the request of his lips.",
+    "You came to greet him with rich blessings and placed a crown of pure gold on his head.",
+    "He asked you for life, and you gave it to him—length of days, for ever and ever.",
+    "Through the victories you gave, his glory is great; you have bestowed on him splendor and majesty.",
+    "Surely you have granted him unending blessings and made him glad with the joy of your presence.",
+    "For the king trusts in the LORD; through the unfailing love of the Most High he will not be shaken.",
+    "Your hand will lay hold on all your enemies; your right hand will seize your foes.",
+    "When you appear for battle, you will burn them up as in a blazing furnace. The LORD will swallow them up in his wrath, and his fire will consume them.",
+    "You will destroy their descendants from the earth, their posterity from mankind.",
+    "Though they plot evil against you and devise wicked schemes, they cannot succeed.",
+    "You will make them turn their backs when you aim at them with drawn bow.",
+    "Be exalted in your strength, LORD; we will sing and praise your might."
   ].join("\n")
 };
 export {

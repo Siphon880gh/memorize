@@ -2,13 +2,13 @@ const EXODUS_15_26_STARTER = {
   type: "bible",
   title: "Jehovah Rapha — The LORD Your Healer",
   bibleReference: "Exodus 15:26",
-  versionHint: "ESV",
-  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Exodus%2015%3A26&version=ESV",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Exodus%2015%3A26&version=NIV",
   description:
-    "I am the LORD, your healer.",
+    "I am the LORD, who heals you.",
   text: [
-    "If you will diligently listen to the voice of the LORD your God, and do that which is right in his eyes, and give ear to his commandments and keep all his statutes,",
-    "I will put none of the diseases on you that I put on the Egyptians, for I am the LORD, your healer."
+    "If you listen carefully to the LORD your God and do what is right in his eyes, if you pay attention to his commands and keep all his decrees,",
+    "I will not bring on you any of the diseases I brought on the Egyptians, for I am the LORD, who heals you."
   ].join("\n")
 };
 export {

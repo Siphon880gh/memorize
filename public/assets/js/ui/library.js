@@ -10,9 +10,10 @@ import {
   GET_BEHIND_ME_SATAN_STARTER,
   DAILY_BREAD_PRAYER_STARTER,
   COMING_TO_CHRIST_STARTER,
-  EXODUS_15_26_STARTER
+  EXODUS_15_26_STARTER,
+  HEALING_STARTERS
 } from "../data/starters.js";
-const OUR_LIBRARY = [
+const DEFAULT_LIBRARY = [
   { key: "psalm91", starter: PSALM_91_STARTER },
   { key: "psalm23", starter: PSALM_23_STARTER },
   { key: "psalm21", starter: PSALM_21_STARTER },
@@ -20,10 +21,20 @@ const OUR_LIBRARY = [
   { key: "resist-the-devil", starter: RESIST_THE_DEVIL_STARTER },
   { key: "get-behind-me-satan", starter: GET_BEHIND_ME_SATAN_STARTER },
   { key: "daily-bread", starter: DAILY_BREAD_PRAYER_STARTER },
-  { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER },
-  { key: "exodus-15-26", starter: EXODUS_15_26_STARTER }
+  { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER }
 ];
+const HEALING_LIBRARY = [
+  { key: "exodus-15-26", starter: EXODUS_15_26_STARTER },
+  ...HEALING_STARTERS.map((starter, index) => ({ key: "healing-" + (index + 1), starter }))
+];
+const LIBRARIES = {
+  default: { label: "Default Library", items: DEFAULT_LIBRARY },
+  healing: { label: "Healing Library", items: HEALING_LIBRARY }
+};
+const OUR_LIBRARY = [...DEFAULT_LIBRARY, ...HEALING_LIBRARY];
 let libraryTab = "our";
+let ourLibraryKey = "default";
+let ourLibraryMenuOpen = false;
 let libraryToast = "";
 function typeLabel(t) {
   return t.replaceAll("_", " ");
@@ -34,7 +45,9 @@ function starterByKey(key) {
 function renderLibrary(root, repo, callbacks, editing) {
   const passages = repo.listPassages();
   const count = passages.length;
-  const ourList = `<ul class="passage-list">${OUR_LIBRARY.map((item) => renderItem(item.starter, { catalogKey: item.key })).join("")}</ul>`;
+  const selectedLibrary = LIBRARIES[ourLibraryKey] ?? LIBRARIES.default;
+  const libraryPicker = ourLibraryMenuOpen ? `<div class="library-picker" id="our-library-options"><p class="library-picker-label">Libraries in Our Library</p><div class="library-picker-options" role="group" aria-label="Libraries in Our Library">${Object.entries(LIBRARIES).map(([key, library]) => `<button class="btn secondary${ourLibraryKey === key ? " nav-current" : ""}" type="button" data-library="${key}" aria-pressed="${ourLibraryKey === key}">${library.label}</button>`).join("")}</div></div>` : "";
+  const ourList = `${libraryPicker}<p class="selected-library-label">Showing: <strong>${selectedLibrary.label}</strong></p><ul class="passage-list">${selectedLibrary.items.map((item) => renderItem(item.starter, { catalogKey: item.key })).join("")}</ul>`;
   const myList = count === 0 ? `<p class="empty">No passages yet. Add one above, or copy one from Our Library.</p>` : `<ul class="passage-list">${passages.map((p) => renderItem(p)).join("")}</ul>`;
   root.innerHTML = `
     <div class="app-shell">
@@ -67,7 +80,7 @@ function renderLibrary(root, repo, callbacks, editing) {
           <input name="bibleReference" placeholder="Psalm 91" value="${escapeAttr(editing?.bibleReference ?? "")}" />
         </label>
         <label>Version hint (optional)
-          <input name="versionHint" placeholder="ESV" value="${escapeAttr(editing?.versionHint ?? "")}" />
+          <input name="versionHint" placeholder="NIV" value="${escapeAttr(editing?.versionHint ?? "")}" />
         </label>
         <label>Passage text
           <textarea name="text" required placeholder="Paste the wording you want to memorize">${escapeHtml(editing?.text ?? "")}</textarea>
@@ -82,7 +95,7 @@ function renderLibrary(root, repo, callbacks, editing) {
     <section class="panel" id="library-panel">
       <div class="library-head">
         <div class="library-tabs" role="tablist" aria-label="Library">
-          <button class="btn secondary${libraryTab === "our" ? " nav-current" : ""}" type="button" id="tab-our" role="tab" aria-selected="${libraryTab === "our"}" aria-controls="library-tab-panel">Our Library</button>
+          <button class="btn secondary${libraryTab === "our" ? " nav-current" : ""}" type="button" id="tab-our" role="tab" aria-selected="${libraryTab === "our"}" aria-expanded="${libraryTab === "our" && ourLibraryMenuOpen}" aria-controls="our-library-options library-tab-panel">Our Library <span aria-hidden="true">${ourLibraryMenuOpen ? "▴" : "▾"}</span></button>
           <button class="btn secondary${libraryTab === "mine" ? " nav-current" : ""}" type="button" id="tab-mine" role="tab" aria-selected="${libraryTab === "mine"}" aria-controls="library-tab-panel">My Library (${count})</button>
         </div>
       </div>
@@ -128,12 +141,21 @@ function renderLibrary(root, repo, callbacks, editing) {
     callbacks.onScoreboard?.();
   });
   root.querySelector("#tab-our")?.addEventListener("click", () => {
+    ourLibraryMenuOpen = libraryTab === "our" ? !ourLibraryMenuOpen : true;
     libraryTab = "our";
     renderLibrary(root, repo, callbacks, editing);
   });
   root.querySelector("#tab-mine")?.addEventListener("click", () => {
+    ourLibraryMenuOpen = false;
     libraryTab = "mine";
     renderLibrary(root, repo, callbacks, editing);
+  });
+  root.querySelectorAll("[data-library]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      ourLibraryKey = btn.dataset.library;
+      ourLibraryMenuOpen = false;
+      renderLibrary(root, repo, callbacks, editing);
+    });
   });
   root.querySelector("#export-data")?.addEventListener("click", () => {
     downloadText("memorize-script-backup.json", exportDocument(repo.load()));
@@ -240,15 +262,16 @@ function renderItem(p, opts = {}) {
   const editAttr = key ? `data-edit-starter="${key}"` : `data-edit="${p.id}"`;
   const deleteAttr = key ? `data-delete-starter="${key}"` : `data-delete="${p.id}"`;
   const copyBtn = key ? `<button class="copy-to-library" type="button" data-copy-starter="${key}">Copy to my library</button>` : "";
+  const title = escapeHtml(p.title);
+  const titleControl = `<button class="passage-title-link" type="button" ${openAttr} aria-label="Open ${escapeAttr(p.title)}">${title}</button>`;
   return `<li class="passage-item">
     <div>
-      <h3>${escapeHtml(p.title)}</h3>
+      <h3>${titleControl}</h3>
       <p>${escapeHtml(meta)}</p>
       <p>${escapeHtml(preview)}${ellipsis}</p>
     </div>
     <div class="passage-actions">
       <div class="passage-actions-row">
-        <button class="btn" type="button" ${openAttr}>Open</button>
         <button class="btn secondary" type="button" ${editAttr}>Edit</button>
         <button class="btn danger" type="button" ${deleteAttr}>Delete</button>
       </div>

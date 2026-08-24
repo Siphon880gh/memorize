@@ -47,7 +47,7 @@ The app never calls the ChatGPT API.
 ## Starters
 
 - **Psalm 91** — reference metadata + Bible Gateway link; you paste wording you may use.
-- **Daily Bread Prayer** — Lord's Prayer (Matthew 6:9–13, ESV).
+- **Daily Bread Prayer** — Lord's Prayer (Matthew 6:9–13, NIV).
 
 ## Sharing
 

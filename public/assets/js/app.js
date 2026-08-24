@@ -2,186 +2,231 @@
 (() => {
   // src/data/sampleDailyBread.ts
   var DAILY_BREAD_PRAYER_STARTER = {
-    type: "bible",
-    title: "Daily Bread Prayer",
-    bibleReference: "Matthew 6:9-13",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Matthew%206%3A9-13&version=ESV",
-    text: [
-      "Our Father in heaven, hallowed be your name.",
-      "Your kingdom come, your will be done, on earth as it is in heaven.",
-      "Give us this day our daily bread,",
-      "and forgive us our debts, as we also have forgiven our debtors.",
-      "And lead us not into temptation, but deliver us from evil."
-    ].join("\n")
-  };
+  type: "bible",
+  title: "Daily Bread Prayer",
+  bibleReference: "Matthew 6:9-13",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Matthew%206%3A9-13&version=NIV",
+  text: [
+    "Our Father in heaven, hallowed be your name,",
+    "your kingdom come, your will be done, on earth as it is in heaven.",
+    "Give us today our daily bread.",
+    "And forgive us our debts, as we also have forgiven our debtors.",
+    "And lead us not into temptation, but deliver us from the evil one."
+  ].join("\n")
+};
 
   // src/data/samplePsalm91.ts
   var PSALM_91_STARTER = {
-    type: "bible",
-    title: "My Refuge and My Fortress (Psalm 91)",
-    bibleReference: "Psalm 91",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2091&version=ESV",
-    text: [
-      "He who dwells in the shelter of the Most High will abide in the shadow of the Almighty.",
-      "I will say to the LORD, “My refuge and my fortress, my God, in whom I trust.”",
-      "For he will deliver you from the snare of the fowler and from the deadly pestilence.",
-      "He will cover you with his pinions, and under his wings you will find refuge; his faithfulness is a shield and buckler.",
-      "You will not fear the terror of the night, nor the arrow that flies by day,",
-      "nor the pestilence that stalks in darkness, nor the destruction that wastes at noonday.",
-      "A thousand may fall at your side, ten thousand at your right hand, but it will not come near you.",
-      "You will only look with your eyes and see the recompense of the wicked.",
-      "Because you have made the LORD your dwelling place— the Most High, who is my refuge—",
-      "no evil shall be allowed to befall you, no plague come near your tent.",
-      "For he will command his angels concerning you to guard you in all your ways.",
-      "On their hands they will bear you up, lest you strike your foot against a stone.",
-      "You will tread on the lion and the adder; the young lion and the serpent you will trample underfoot.",
-      "“Because he holds fast to me in love, I will deliver him; I will protect him, because he knows my name.",
-      "When he calls to me, I will answer him; I will be with him in trouble; I will rescue him and honor him.",
-      "With long life I will satisfy him and show him my salvation.”"
-    ].join("\n")
-  };
+  type: "bible",
+  title: "My Refuge and My Fortress (Psalm 91)",
+  bibleReference: "Psalm 91",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2091&version=NIV",
+  text: [
+    "Whoever dwells in the shelter of the Most High will rest in the shadow of the Almighty.",
+    "I will say of the LORD, “He is my refuge and my fortress, my God, in whom I trust.”",
+    "Surely he will save you from the fowler’s snare and from the deadly pestilence.",
+    "He will cover you with his feathers, and under his wings you will find refuge; his faithfulness will be your shield and rampart.",
+    "You will not fear the terror of night, nor the arrow that flies by day,",
+    "nor the pestilence that stalks in the darkness, nor the plague that destroys at midday.",
+    "A thousand may fall at your side, ten thousand at your right hand, but it will not come near you.",
+    "You will only observe with your eyes and see the punishment of the wicked.",
+    "If you say, “The LORD is my refuge,” and you make the Most High your dwelling,",
+    "no harm will overtake you, no disaster will come near your tent.",
+    "For he will command his angels concerning you to guard you in all your ways;",
+    "they will lift you up in their hands, so that you will not strike your foot against a stone.",
+    "You will tread on the lion and the cobra; you will trample the great lion and the serpent.",
+    "“Because he loves me,” says the LORD, “I will rescue him; I will protect him, for he acknowledges my name.",
+    "He will call on me, and I will answer him; I will be with him in trouble, I will deliver him and honor him.",
+    "With long life I will satisfy him and show him my salvation.”"
+  ].join("\n")
+};
 
   // src/data/samplePsalm23.ts
   var PSALM_23_STARTER = {
-    type: "bible",
-    title: "The Lord is My Shepherd (Psalm 23)",
-    bibleReference: "Psalm 23",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=ESV",
-    description:
-      "The LORD is my shepherd; I shall not want. He makes me lie down in green pastures\u2026Even though I walk through the valley of the shadow of death",
-    text: [
-      "The LORD is my shepherd; I shall not want.",
-      "He makes me lie down in green pastures. He leads me beside still waters.",
-      "He restores my soul. He leads me in paths of righteousness for his name’s sake.",
-      "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me.",
-      "You prepare a table before me in the presence of my enemies; you anoint my head with oil; my cup overflows.",
-      "Surely goodness and mercy shall follow me all the days of my life, and I shall dwell in the house of the LORD forever."
-    ].join("\n")
-  };
+  type: "bible",
+  title: "The Lord is My Shepherd (Psalm 23)",
+  bibleReference: "Psalm 23",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2023&version=NIV",
+  description:
+    "The LORD is my shepherd, I lack nothing. He makes me lie down in green pastures\u2026Even though I walk through the darkest valley",
+  text: [
+    "The LORD is my shepherd, I lack nothing.",
+    "He makes me lie down in green pastures, he leads me beside quiet waters,",
+    "he refreshes my soul. He guides me along the right paths for his name’s sake.",
+    "Even though I walk through the darkest valley, I will fear no evil, for you are with me; your rod and your staff, they comfort me.",
+    "You prepare a table before me in the presence of my enemies. You anoint my head with oil; my cup overflows.",
+    "Surely your goodness and love will follow me all the days of my life, and I will dwell in the house of the LORD forever."
+  ].join("\n")
+};
 
   // src/data/samplePsalm21.ts
   var PSALM_21_STARTER = {
-    type: "bible",
-    title: "No Devices of Evil Shall Work Against Me (Psalm 21)",
-    bibleReference: "Psalm 21",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=ESV",
-    description:
-      "O LORD, in your strength the king rejoices\u2026Though they plan evil against you, though they devise mischief, they will not succeed.",
-    text: [
-      "O LORD, in your strength the king rejoices, and in your salvation how greatly he exults!",
-      "You have given him his heart’s desire and have not withheld the request of his lips. Selah",
-      "For you meet him with rich blessings; you set a crown of fine gold upon his head.",
-      "He asked life of you; you gave it to him, length of days forever and ever.",
-      "His glory is great through your salvation; splendor and majesty you bestow on him.",
-      "For you make him most blessed forever; you make him glad with the joy of your presence.",
-      "For the king trusts in the LORD, and through the steadfast love of the Most High he shall not be moved.",
-      "Your hand will find out all your enemies; your right hand will find out those who hate you.",
-      "You will make them as a blazing oven when you appear. The LORD will swallow them up in his wrath, and fire will consume them.",
-      "You will destroy their descendants from the earth, and their offspring from among the children of man.",
-      "Though they plan evil against you, though they devise mischief, they will not succeed.",
-      "For you will put them to flight; you will aim at their faces with your bows.",
-      "Be exalted, O LORD, in your strength! We will sing and praise your power."
-    ].join("\n")
-  };
+  type: "bible",
+  title: "No Devices of Evil Shall Work Against Me (Psalm 21)",
+  bibleReference: "Psalm 21",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%2021&version=NIV",
+  description:
+    "The king rejoices in your strength, LORD\u2026Though they plot evil against you and devise wicked schemes, they cannot succeed.",
+  text: [
+    "The king rejoices in your strength, LORD. How great is his joy in the victories you give!",
+    "You have granted him his heart’s desire and have not withheld the request of his lips.",
+    "You came to greet him with rich blessings and placed a crown of pure gold on his head.",
+    "He asked you for life, and you gave it to him—length of days, for ever and ever.",
+    "Through the victories you gave, his glory is great; you have bestowed on him splendor and majesty.",
+    "Surely you have granted him unending blessings and made him glad with the joy of your presence.",
+    "For the king trusts in the LORD; through the unfailing love of the Most High he will not be shaken.",
+    "Your hand will lay hold on all your enemies; your right hand will seize your foes.",
+    "When you appear for battle, you will burn them up as in a blazing furnace. The LORD will swallow them up in his wrath, and his fire will consume them.",
+    "You will destroy their descendants from the earth, their posterity from mankind.",
+    "Though they plot evil against you and devise wicked schemes, they cannot succeed.",
+    "You will make them turn their backs when you aim at them with drawn bow.",
+    "Be exalted in your strength, LORD; we will sing and praise your might."
+  ].join("\n")
+};
 
   // src/data/sampleArmorOfGod.ts
   var ARMOR_OF_GOD_STARTER = {
-    type: "bible",
-    title: "Armor of God",
-    bibleReference: "Ephesians 6:10-18",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Ephesians%206%3A10-18&version=ESV",
-    description:
-      "Put on the whole armor of God, that you may be able to stand against the schemes of the devil.",
-    text: [
-      "Finally, be strong in the Lord and in the strength of his might.",
-      "Put on the whole armor of God, that you may be able to stand against the schemes of the devil.",
-      "For we do not wrestle against flesh and blood, but against the rulers, against the authorities, against the cosmic powers over this present darkness, against the spiritual forces of evil in the heavenly places.",
-      "Therefore take up the whole armor of God, that you may be able to withstand in the evil day, and having done all, to stand firm.",
-      "Stand therefore, having fastened on the belt of truth, and having put on the breastplate of righteousness,",
-      "and, as shoes for your feet, having put on the readiness given by the gospel of peace.",
-      "In all circumstances take up the shield of faith, with which you can extinguish all the flaming darts of the evil one;",
-      "and take the helmet of salvation, and the sword of the Spirit, which is the word of God,",
-      "praying at all times in the Spirit, with all prayer and supplication. To that end, keep alert with all perseverance, making supplication for all the saints,"
-    ].join("\n")
-  };
+  type: "bible",
+  title: "Armor of God",
+  bibleReference: "Ephesians 6:10-18",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Ephesians%206%3A10-18&version=NIV",
+  description:
+    "Put on the full armor of God, so that you can take your stand against the devil’s schemes.",
+  text: [
+    "Finally, be strong in the Lord and in his mighty power.",
+    "Put on the full armor of God, so that you can take your stand against the devil’s schemes.",
+    "For our struggle is not against flesh and blood, but against the rulers, against the authorities, against the powers of this dark world and against the spiritual forces of evil in the heavenly realms.",
+    "Therefore put on the full armor of God, so that when the day of evil comes, you may be able to stand your ground, and after you have done everything, to stand.",
+    "Stand firm then, with the belt of truth buckled around your waist, with the breastplate of righteousness in place,",
+    "and with your feet fitted with the readiness that comes from the gospel of peace.",
+    "In addition to all this, take up the shield of faith, with which you can extinguish all the flaming arrows of the evil one.",
+    "Take the helmet of salvation and the sword of the Spirit, which is the word of God.",
+    "And pray in the Spirit on all occasions with all kinds of prayers and requests. With this in mind, be alert and always keep on praying for all the Lord’s people."
+  ].join("\n")
+};
 
   // src/data/sampleComingToChrist.ts
   var COMING_TO_CHRIST_STARTER = {
-    type: "bible",
-    title: "Coming to Christ",
-    bibleReference: "Romans 3:23; 6:23; 5:8; 10:9-13; 1 John 1:9; Acts 2:38; John 14:15-17; 16:7-8; Galatians 2:20",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Romans%203%3A23%3BRomans%206%3A23%3BRomans%205%3A8%3BRomans%2010%3A9-13%3B1%20John%201%3A9%3BActs%202%3A38%3BJohn%2014%3A15-17%3BJohn%2016%3A7-8%3BGalatians%202%3A20&version=ESV",
-    text: [
-      "for all have sinned and fall short of the glory of God,",
-      "For the wages of sin is death, but the free gift of God is eternal life in Christ Jesus our Lord.",
-      "but God shows his love for us in that while we were still sinners, Christ died for us.",
-      "because, if you confess with your mouth that Jesus is Lord and believe in your heart that God raised him from the dead, you will be saved.",
-      "For with the heart one believes and is justified, and with the mouth one confesses and is saved.",
-      "For the Scripture says, “Everyone who believes in him will not be put to shame.”",
-      "For there is no distinction between Jew and Greek; for the same Lord is Lord of all, bestowing his riches on all who call on him.",
-      "For “everyone who calls on the name of the Lord will be saved.”",
-      "If we confess our sins, he is faithful and just to forgive us our sins and to cleanse us from all unrighteousness.",
-      "And Peter said to them, “Repent and be baptized every one of you in the name of Jesus Christ for the forgiveness of your sins, and you will receive the gift of the Holy Spirit.",
-      "“If you love me, you will keep my commandments.",
-      "And I will ask the Father, and he will give you another Helper, to be with you forever,",
-      "even the Spirit of truth, whom the world cannot receive, because it neither sees him nor knows him. You know him, for he dwells with you and will be in you.",
-      "Nevertheless, I tell you the truth: it is to your advantage that I go away, for if I do not go away, the Helper will not come to you. But if I go, I will send him to you.",
-      "And when he comes, he will convict the world concerning sin and righteousness and judgment:",
-      "I have been crucified with Christ. It is no longer I who live, but Christ who lives in me. And the life I now live in the flesh I live by faith in the Son of God, who loved me and gave himself for me."
-    ].join("\n")
-  };
+  type: "bible",
+  title: "Coming to Christ",
+  bibleReference: "Romans 3:23; 6:23; 5:8; 10:9-13; 1 John 1:9; Acts 2:38; John 14:15-17; 16:7-8; Galatians 2:20",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Romans%203%3A23%3BRomans%206%3A23%3BRomans%205%3A8%3BRomans%2010%3A9-13%3B1%20John%201%3A9%3BActs%202%3A38%3BJohn%2014%3A15-17%3BJohn%2016%3A7-8%3BGalatians%202%3A20&version=NIV",
+  text: [
+    "for all have sinned and fall short of the glory of God,",
+    "For the wages of sin is death, but the gift of God is eternal life in Christ Jesus our Lord.",
+    "But God demonstrates his own love for us in this: While we were still sinners, Christ died for us.",
+    "If you declare with your mouth, “Jesus is Lord,” and believe in your heart that God raised him from the dead, you will be saved.",
+    "For it is with your heart that you believe and are justified, and it is with your mouth that you profess your faith and are saved.",
+    "As Scripture says, “Anyone who believes in him will never be put to shame.”",
+    "For there is no difference between Jew and Gentile—the same Lord is Lord of all and richly blesses all who call on him,",
+    "for, “Everyone who calls on the name of the Lord will be saved.”",
+    "If we confess our sins, he is faithful and just and will forgive us our sins and purify us from all unrighteousness.",
+    "Peter replied, “Repent and be baptized, every one of you, in the name of Jesus Christ for the forgiveness of your sins. And you will receive the gift of the Holy Spirit.”",
+    "“If you love me, keep my commands.",
+    "And I will ask the Father, and he will give you another advocate to help you and be with you forever—",
+    "the Spirit of truth. The world cannot accept him, because it neither sees him nor knows him. But you know him, for he lives with you and will be in you.",
+    "But very truly I tell you, it is for your good that I am going away. Unless I go away, the Advocate will not come to you; but if I go, I will send him to you.",
+    "When he comes, he will prove the world to be in the wrong about sin and righteousness and judgment:",
+    "I have been crucified with Christ and I no longer live, but Christ lives in me. The life I now live in the body, I live by faith in the Son of God, who loved me and gave himself for me."
+  ].join("\n")
+};
 
   // src/data/sampleResistTheDevil.ts
   var RESIST_THE_DEVIL_STARTER = {
-    type: "bible",
-    title: "Resist the Devil",
-    bibleReference: "James 4:7-8",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=James%204%3A7-8&version=ESV",
-    description:
-      "Submit yourselves therefore to God. Resist the devil, and he will flee from you.",
-    text: [
-      "Submit yourselves therefore to God. Resist the devil, and he will flee from you.",
-      "Draw near to God, and he will draw near to you. Cleanse your hands, you sinners, and purify your hearts, you double-minded."
-    ].join("\n")
-  };
+  type: "bible",
+  title: "Resist the Devil",
+  bibleReference: "James 4:7-8",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=James%204%3A7-8&version=NIV",
+  description:
+    "Submit yourselves, then, to God. Resist the devil, and he will flee from you.",
+  text: [
+    "Submit yourselves, then, to God. Resist the devil, and he will flee from you.",
+    "Come near to God and he will come near to you. Wash your hands, you sinners, and purify your hearts, you double-minded."
+  ].join("\n")
+};
 
   // src/data/sampleGetBehindMeSatan.ts
   var GET_BEHIND_ME_SATAN_STARTER = {
-    type: "bible",
-    title: "Get Behind Me, Satan",
-    bibleReference: "Matthew 4:10; Matthew 16:23",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Matthew%204%3A10%3BMatthew%2016%3A23&version=ESV",
-    description:
-      "Get behind me, Satan! You are a hindrance to me. For you are not setting your mind on the things of God, but on the things of man.",
-    text: [
-      "Then Jesus said to him, “Be gone, Satan! For it is written, “‘You shall worship the Lord your God and him only shall you serve.’”",
-      "But he turned and said to Peter, “Get behind me, Satan! You are a hindrance to me. For you are not setting your mind on the things of God, but on the things of man.”"
-    ].join("\n")
-  };
+  type: "bible",
+  title: "Get Behind Me, Satan",
+  bibleReference: "Matthew 4:10; Matthew 16:23",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Matthew%204%3A10%3BMatthew%2016%3A23&version=NIV",
+  description:
+    "Get behind me, Satan! You are a stumbling block to me; you do not have in mind the concerns of God, but merely human concerns.",
+  text: [
+    "Jesus said to him, “Away from me, Satan! For it is written: ‘Worship the Lord your God, and serve him only.’”",
+    "Jesus turned and said to Peter, “Get behind me, Satan! You are a stumbling block to me; you do not have in mind the concerns of God, but merely human concerns.”"
+  ].join("\n")
+};
 
   // src/data/sampleExodus1526.ts
   var EXODUS_15_26_STARTER = {
+  type: "bible",
+  title: "Jehovah Rapha — The LORD Your Healer",
+  bibleReference: "Exodus 15:26",
+  versionHint: "NIV",
+  bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Exodus%2015%3A26&version=NIV",
+  description:
+    "I am the LORD, who heals you.",
+  text: [
+    "If you listen carefully to the LORD your God and do what is right in his eyes, if you pay attention to his commands and keep all his decrees,",
+    "I will not bring on you any of the diseases I brought on the Egyptians, for I am the LORD, who heals you."
+  ].join("\n")
+};
+
+  var HEALING_STARTERS = [
+  {
     type: "bible",
-    title: "Jehovah Rapha — The LORD Your Healer",
-    bibleReference: "Exodus 15:26",
-    versionHint: "ESV",
-    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Exodus%2015%3A26&version=ESV",
-    description:
-      "I am the LORD, your healer.",
+    title: "With His Wounds We Are Healed",
+    bibleReference: "Isaiah 53:4-5",
+    versionHint: "NIV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Isaiah%2053%3A4-5&version=NIV",
     text: [
-      "If you will diligently listen to the voice of the LORD your God, and do that which is right in his eyes, and give ear to his commandments and keep all his statutes,",
-      "I will put none of the diseases on you that I put on the Egyptians, for I am the LORD, your healer."
+      "Surely he took up our pain and bore our suffering, yet we considered him punished by God, stricken by him, and afflicted.",
+      "But he was pierced for our transgressions, he was crushed for our iniquities; the punishment that brought us peace was on him, and by his wounds we are healed."
     ].join("\n")
-  };
-  var OUR_LIBRARY = [
+  },
+  {
+    type: "bible",
+    title: "Bless the LORD, Who Heals You",
+    bibleReference: "Psalm 103:1-5",
+    versionHint: "NIV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%20103%3A1-5&version=NIV",
+    text: [
+      "Praise the LORD, my soul; all my inmost being, praise his holy name.",
+      "Praise the LORD, my soul, and forget not all his benefits—",
+      "who forgives all your sins and heals all your diseases,",
+      "who redeems your life from the pit and crowns you with love and compassion,",
+      "who satisfies your desires with good things so that your youth is renewed like the eagle’s."
+    ].join("\n")
+  },
+  {
+    type: "bible",
+    title: "He Heals the Brokenhearted",
+    bibleReference: "Psalm 147:3",
+    versionHint: "NIV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Psalm%20147%3A3&version=NIV",
+    text: "He heals the brokenhearted and binds up their wounds."
+  },
+  {
+    type: "bible",
+    title: "Heal Me, O LORD",
+    bibleReference: "Jeremiah 17:14",
+    versionHint: "NIV",
+    bibleGatewayUrl: "https://www.biblegateway.com/passage/?search=Jeremiah%2017%3A14&version=NIV",
+    text: "Heal me, LORD, and I will be healed; save me and I will be saved, for you are the one I praise."
+  }
+];
+
+  var DEFAULT_LIBRARY = [
     { key: "psalm91", starter: PSALM_91_STARTER },
     { key: "psalm23", starter: PSALM_23_STARTER },
     { key: "psalm21", starter: PSALM_21_STARTER },
@@ -189,9 +234,17 @@
     { key: "resist-the-devil", starter: RESIST_THE_DEVIL_STARTER },
     { key: "get-behind-me-satan", starter: GET_BEHIND_ME_SATAN_STARTER },
     { key: "daily-bread", starter: DAILY_BREAD_PRAYER_STARTER },
-    { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER },
-    { key: "exodus-15-26", starter: EXODUS_15_26_STARTER }
+    { key: "coming-to-christ", starter: COMING_TO_CHRIST_STARTER }
   ];
+  var HEALING_LIBRARY = [
+    { key: "exodus-15-26", starter: EXODUS_15_26_STARTER },
+    ...HEALING_STARTERS.map((starter, index) => ({ key: "healing-" + (index + 1), starter }))
+  ];
+  var LIBRARIES = {
+    default: { label: "Default Library", items: DEFAULT_LIBRARY },
+    healing: { label: "Healing Library", items: HEALING_LIBRARY }
+  };
+  var OUR_LIBRARY = [...DEFAULT_LIBRARY, ...HEALING_LIBRARY];
   function starterByKey(key) {
     return OUR_LIBRARY.find((item) => item.key === key)?.starter;
   }
@@ -433,11 +486,15 @@
     return t.replaceAll("_", " ");
   }
   var libraryTab = "our";
+  var ourLibraryKey = "default";
+  var ourLibraryMenuOpen = false;
   var libraryToast = "";
   function renderLibrary(root, repo2, callbacks, editing) {
     const passages = repo2.listPassages();
     const count = passages.length;
-    const ourList = `<ul class="passage-list">${OUR_LIBRARY.map((item) => renderItem(item.starter, { catalogKey: item.key })).join("")}</ul>`;
+    const selectedLibrary = LIBRARIES[ourLibraryKey] ?? LIBRARIES.default;
+    const libraryPicker = ourLibraryMenuOpen ? `<div class="library-picker" id="our-library-options"><p class="library-picker-label">Libraries in Our Library</p><div class="library-picker-options" role="group" aria-label="Libraries in Our Library">${Object.entries(LIBRARIES).map(([key, library]) => `<button class="btn secondary${ourLibraryKey === key ? " nav-current" : ""}" type="button" data-library="${key}" aria-pressed="${ourLibraryKey === key}">${library.label}</button>`).join("")}</div></div>` : "";
+    const ourList = `${libraryPicker}<p class="selected-library-label">Showing: <strong>${selectedLibrary.label}</strong></p><ul class="passage-list">${selectedLibrary.items.map((item) => renderItem(item.starter, { catalogKey: item.key })).join("")}</ul>`;
     const myList = count === 0 ? `<p class="empty">No passages yet. Add one above, or copy one from Our Library.</p>` : `<ul class="passage-list">${passages.map((p) => renderItem(p)).join("")}</ul>`;
     root.innerHTML = `
     <div class="app-shell">
@@ -470,7 +527,7 @@
           <input name="bibleReference" placeholder="Psalm 91" value="${escapeAttr(editing?.bibleReference ?? "")}" />
         </label>
         <label>Version hint (optional)
-          <input name="versionHint" placeholder="ESV" value="${escapeAttr(editing?.versionHint ?? "")}" />
+          <input name="versionHint" placeholder="NIV" value="${escapeAttr(editing?.versionHint ?? "")}" />
         </label>
         <label>Passage text
           <textarea name="text" required placeholder="Paste the wording you want to memorize">${escapeHtml(editing?.text ?? "")}</textarea>
@@ -485,7 +542,7 @@
     <section class="panel" id="library-panel">
       <div class="library-head">
         <div class="library-tabs" role="tablist" aria-label="Library">
-          <button class="btn secondary${libraryTab === "our" ? " nav-current" : ""}" type="button" id="tab-our" role="tab" aria-selected="${libraryTab === "our"}" aria-controls="library-tab-panel">Our Library</button>
+          <button class="btn secondary${libraryTab === "our" ? " nav-current" : ""}" type="button" id="tab-our" role="tab" aria-selected="${libraryTab === "our"}" aria-expanded="${libraryTab === "our" && ourLibraryMenuOpen}" aria-controls="our-library-options library-tab-panel">Our Library <span aria-hidden="true">${ourLibraryMenuOpen ? "▴" : "▾"}</span></button>
           <button class="btn secondary${libraryTab === "mine" ? " nav-current" : ""}" type="button" id="tab-mine" role="tab" aria-selected="${libraryTab === "mine"}" aria-controls="library-tab-panel">My Library (${count})</button>
         </div>
       </div>
@@ -531,12 +588,21 @@
       callbacks.onScoreboard?.();
     });
     root.querySelector("#tab-our")?.addEventListener("click", () => {
+      ourLibraryMenuOpen = libraryTab === "our" ? !ourLibraryMenuOpen : true;
       libraryTab = "our";
       renderLibrary(root, repo2, callbacks, editing);
     });
     root.querySelector("#tab-mine")?.addEventListener("click", () => {
+      ourLibraryMenuOpen = false;
       libraryTab = "mine";
       renderLibrary(root, repo2, callbacks, editing);
+    });
+    root.querySelectorAll("[data-library]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        ourLibraryKey = btn.dataset.library;
+        ourLibraryMenuOpen = false;
+        renderLibrary(root, repo2, callbacks, editing);
+      });
     });
     root.querySelector("#export-data")?.addEventListener("click", () => {
       downloadText("memorize-script-backup.json", exportDocument(repo2.load()));
@@ -643,15 +709,16 @@
     const editAttr = key ? `data-edit-starter="${key}"` : `data-edit="${p.id}"`;
     const deleteAttr = key ? `data-delete-starter="${key}"` : `data-delete="${p.id}"`;
     const copyBtn = key ? `<button class="copy-to-library" type="button" data-copy-starter="${key}">Copy to my library</button>` : "";
+    const title = escapeHtml(p.title);
+    const titleControl = `<button class="passage-title-link" type="button" ${openAttr} aria-label="Open ${escapeAttr(p.title)}">${title}</button>`;
     return `<li class="passage-item">
     <div>
-      <h3>${escapeHtml(p.title)}</h3>
+      <h3>${titleControl}</h3>
       <p>${escapeHtml(meta)}</p>
       <p>${escapeHtml(preview)}${ellipsis}</p>
     </div>
     <div class="passage-actions">
       <div class="passage-actions-row">
-        <button class="btn" type="button" ${openAttr}>Open</button>
         <button class="btn secondary" type="button" ${editAttr}>Edit</button>
         <button class="btn danger" type="button" ${deleteAttr}>Delete</button>
       </div>
@@ -1489,10 +1556,25 @@
     doc.passages = doc.passages.map((p) => p.id === passage.id ? passage : p);
     repo2.save(doc);
   }
+  function buildReadBibleContextPrompt(passage) {
+    const details = [
+      `Title: ${passage.title || "Untitled"}`,
+      passage.bibleReference ? `Saved Bible reference: ${passage.bibleReference}` : "",
+      passage.versionHint ? `Translation/version hint: ${passage.versionHint}` : "",
+      `Passage text:\n${passage.text.trim()}`
+    ].filter(Boolean).join("\n");
+    return `${details}\n\nIdentify where this passage or verse is from in the Bible. If the saved reference conflicts with the wording, explain the likely match and uncertainty. Explain its literary, historical, and theological context so it will not be quoted or interpreted apart from what the surrounding passage means. Include the nearby verses or chapter context that materially changes how it should be understood. Be concise but specific, and distinguish what the text says from interpretive conclusions.\n\nFinish with a ready-to-open link to this Bible reader for the best-matching verse or passage: https://wengindustries.com/app/sp/Bible/\nUse this exact deep-link format: https://wengindustries.com/app/sp/Bible/?view={"v":2,"book":"Matthew","chapter":"14","verse":"22"}&highlighted=[22,23,24]#\nThe view value must be URL-encoded JSON with v:2, the full Bible book name, the human chapter number, and the first verse to scroll to. The highlighted value must be a URL-encoded JSON array of all 1-based verse numbers in the matching range. Do not use zero-based chapter numbers. Link the passage itself, not merely the whole chapter.`;
+  }
+  function buildReadBibleContextUrl(passage) {
+    return `https://chatgpt.com/?q=${encodeURIComponent(buildReadBibleContextPrompt(passage))}`;
+  }
   function renderRead(panel, _repo, passage, onContinue) {
     const empty = passage.segments.length === 0 || !passage.text.trim();
     panel.innerHTML = `
-    <h2>Read</h2>
+    <div class="read-heading">
+      <h2>Read</h2>
+      ${empty ? "" : `<a class="btn secondary read-ai-button" href="${escapeAttr(buildReadBibleContextUrl(passage))}" target="_blank" rel="noopener noreferrer" title="Ask AI to identify this passage, explain its context, and link it in Bible">AI Bible context</a>`}
+    </div>
     ${empty ? `<p class="empty">This passage has no text yet. Go to <strong>Library</strong>, edit it, and paste the wording you want to memorize.</p>
            <div class="row stage-next-row"><button class="btn stage-next" type="button" id="mark-read" disabled>Mark Read complete \u2192 Understand</button></div>` : `<p class="empty">Read the full passage with segment markers. Absorb cadence before reducing.</p>
            <ol class="segment-list">
