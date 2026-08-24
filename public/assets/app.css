@@ -741,7 +741,8 @@ button.btn:disabled {
 
 .quick-study-line {
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr);
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  align-items: start;
   gap: 0.65rem;
   padding: 0.75rem 0.25rem;
   color: var(--ink-faint);
@@ -773,6 +774,27 @@ button.btn:disabled {
 .quick-study-text {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.quick-study-restart {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0;
+  color: var(--brass);
+  font: 700 1.15rem/1 var(--ui);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.quick-study-restart:hover,
+.quick-study-restart:focus-visible {
+  color: var(--navy);
+  background: var(--amber);
+  border-color: var(--brass);
 }
 
 .quick-study-line:not(.is-revealed) .quick-study-text {
@@ -813,14 +835,14 @@ button.btn:disabled {
 
 .quick-study-half-nav {
   display: grid;
-  grid-template-columns: 2.4rem minmax(6rem, auto) 2.4rem;
+  grid-template-columns: 2.4rem minmax(4.75rem, auto) 2.4rem;
   align-items: center;
-  justify-content: start;
+  justify-content: end;
   gap: 0.35rem;
-  margin-top: 0.55rem;
   color: var(--navy);
   font-size: 0.84rem;
   font-weight: 700;
+  text-align: center;
 }
 
 .quick-study-half-nav[hidden] {
@@ -861,6 +883,14 @@ button.btn:disabled {
 
 .quick-study-cue span {
   color: var(--ink-faint);
+}
+
+.quick-study-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.4rem;
 }
 
 .sr-only {

@@ -1609,13 +1609,15 @@
            <button class="btn secondary" type="button" data-quick-hint="four">Four words</button>
            <button class="btn secondary quick-study-half-button" type="button" id="quick-study-half" aria-pressed="false" aria-controls="quick-study-half-nav">Show half</button>
          </div>
-         <div class="quick-study-half-nav" id="quick-study-half-nav" aria-label="Choose which half of the line to show" hidden>
-           <button class="quick-study-half-chevron" type="button" id="quick-study-half-first" aria-label="Show first half">‹</button>
-           <span id="quick-study-half-label" aria-live="polite">First half</span>
-           <button class="quick-study-half-chevron" type="button" id="quick-study-half-second" aria-label="Show second half">›</button>
-         </div>
          <p class="quick-study-cue" id="quick-study-cue" aria-live="polite">No hint used yet.</p>
-         <button class="btn" type="button" id="quick-study-reveal">Reveal line</button>
+         <div class="quick-study-footer">
+           <button class="btn" type="button" id="quick-study-reveal">Reveal line</button>
+           <div class="quick-study-half-nav" id="quick-study-half-nav" aria-label="Choose which half of the line to show" hidden>
+             <button class="quick-study-half-chevron" type="button" id="quick-study-half-first" aria-label="Show first half">‹</button>
+             <span id="quick-study-half-label" aria-live="polite">First half</span>
+             <button class="quick-study-half-chevron" type="button" id="quick-study-half-second" aria-label="Show second half">›</button>
+           </div>
+         </div>
        </div>`
     );
     const modal = document.getElementById("app-help-modal");
@@ -1665,7 +1667,7 @@
           const isActive = index === active && !isRevealed;
           const state = isRevealed ? "revealed" : isActive ? "active" : "locked";
           const content = isRevealed ? esc2(line) : `<span aria-hidden="true">${quickStudyCensor(line)}</span><span class="sr-only">Line ${index + 1} hidden</span>`;
-          return `<li class="quick-study-line is-${state}" aria-current="${isActive ? "step" : "false"}"><span class="quick-study-number">${index + 1}</span><span class="quick-study-text">${content}</span></li>`;
+          return `<li class="quick-study-line is-${state}" aria-current="${isActive ? "step" : "false"}"><span class="quick-study-number">${index + 1}</span><span class="quick-study-text">${content}</span><button class="quick-study-restart" type="button" data-quick-restart="${index}" aria-label="Restart from line ${index + 1}" title="Restart from this line">↺</button></li>`;
         }).join("");
       }
       const complete = active >= lines.length;
@@ -1674,9 +1676,12 @@
       if (cue && !complete) cue.textContent = "No hint used yet.";
       if (reveal && !complete) reveal.textContent = active === lines.length - 1 ? "Reveal final line" : "Reveal line & continue";
       if (halfButton && !complete) {
+        const canShowHalf = quickStudyWords(lines[active]).length > 1;
         halfButton.textContent = "Show half";
         halfButton.setAttribute("aria-label", "Show or hide half of this line");
         halfButton.setAttribute("aria-pressed", "false");
+        halfButton.disabled = !canShowHalf;
+        halfButton.title = canShowHalf ? "" : "This line has only one word";
       }
       if (halfNav) halfNav.hidden = true;
     };
@@ -1688,6 +1693,19 @@
         halfButton?.setAttribute("aria-pressed", "false");
         cue.innerHTML = `<span>Hint:</span> <strong>${esc2(quickStudyHint(lines[active], button.dataset.quickHint))}</strong>`;
       });
+    });
+    list?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-quick-restart]");
+      if (!button) return;
+      const restartAt = Number(button.dataset.quickRestart);
+      if (!Number.isInteger(restartAt) || restartAt < 0 || restartAt >= lines.length) return;
+      active = restartAt;
+      for (const index of revealed) {
+        if (index >= restartAt) revealed.delete(index);
+      }
+      halfVisible = false;
+      halfSide = "first";
+      paint();
     });
     halfButton?.addEventListener("click", () => {
       if (!cue || active >= lines.length) return;
