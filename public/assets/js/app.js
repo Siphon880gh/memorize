@@ -1568,6 +1568,139 @@
   function buildReadBibleContextUrl(passage) {
     return `https://chatgpt.com/?q=${encodeURIComponent(buildReadBibleContextPrompt(passage))}`;
   }
+  const TELEPROMPT_STORAGE_PREFIX = "memorize-script.teleprompt.v1.";
+  function loadTelepromptState(passageId) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`${TELEPROMPT_STORAGE_PREFIX}${passageId}`) || "null");
+      return {
+        speed: Math.min(100, Math.max(10, Number(saved?.speed) || 35)),
+        position: Math.max(0, Number(saved?.position) || 0)
+      };
+    } catch {
+      return { speed: 35, position: 0 };
+    }
+  }
+  function saveTelepromptState(passageId, state) {
+    try {
+      localStorage.setItem(`${TELEPROMPT_STORAGE_PREFIX}${passageId}`, JSON.stringify({
+        speed: state.speed,
+        position: Math.round(state.position)
+      }));
+    } catch {
+      // Teleprompting still works when storage is unavailable.
+    }
+  }
+  function openTeleprompt(passage) {
+    const text = passage.text.trim();
+    if (!text) return;
+    const saved = loadTelepromptState(passage.id);
+    openHelpModal(
+      "Teleprompt",
+      `<p class="teleprompt-intro">Press play, or scroll the frame to choose your place.</p>
+       <div class="teleprompt-frame" id="teleprompt-frame" tabindex="0" aria-label="Teleprompter text. Scroll to reposition.">
+         <div class="teleprompt-lead" aria-hidden="true"></div>
+         <div class="teleprompt-copy">${esc2(text).replace(/\n/g, "<br>")}</div>
+         <div class="teleprompt-tail" aria-hidden="true"></div>
+       </div>
+       <div class="teleprompt-controls">
+         <button class="btn" type="button" id="teleprompt-play" aria-pressed="false">Play</button>
+         <button class="btn secondary" type="button" id="teleprompt-start">Start over</button>
+         <label class="teleprompt-speed" for="teleprompt-speed">
+           <span>Speed</span>
+           <input id="teleprompt-speed" type="range" min="10" max="100" step="5" value="${saved.speed}">
+           <output id="teleprompt-speed-value" for="teleprompt-speed">${saved.speed} px/s</output>
+         </label>
+       </div>
+       <p class="teleprompt-status" id="teleprompt-status" aria-live="polite">Paused · position saved for this passage</p>`
+    );
+    const backdrop = document.getElementById("app-help-modal");
+    if (!backdrop) return;
+    backdrop.querySelector(".modal")?.classList.add("modal-teleprompt");
+    const heading = backdrop.querySelector("#help-modal-title");
+    if (heading) {
+      const passageTitle = document.createElement("span");
+      passageTitle.className = "quick-study-title";
+      passageTitle.textContent = passage.title || "Untitled";
+      heading.appendChild(passageTitle);
+    }
+    const frame = backdrop.querySelector("#teleprompt-frame");
+    const playButton = backdrop.querySelector("#teleprompt-play");
+    const startButton = backdrop.querySelector("#teleprompt-start");
+    const speedInput = backdrop.querySelector("#teleprompt-speed");
+    const speedValue = backdrop.querySelector("#teleprompt-speed-value");
+    const status = backdrop.querySelector("#teleprompt-status");
+    if (!frame || !playButton || !speedInput) return;
+    let speed = saved.speed;
+    let playing = false;
+    let animationFrame = 0;
+    let previousTime = 0;
+    let saveTimer = 0;
+    const persist = () => saveTelepromptState(passage.id, { speed, position: frame.scrollTop });
+    const schedulePersist = () => {
+      window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(persist, 160);
+    };
+    const paintPlayback = (message) => {
+      playButton.textContent = playing ? "Pause" : "Play";
+      playButton.setAttribute("aria-pressed", String(playing));
+      if (status) status.textContent = message || (playing ? `Playing · ${speed} px/s` : "Paused · position saved for this passage");
+    };
+    const stop = (message) => {
+      playing = false;
+      cancelAnimationFrame(animationFrame);
+      previousTime = 0;
+      persist();
+      paintPlayback(message);
+    };
+    const tick = (time) => {
+      if (!playing || !backdrop.isConnected) return;
+      if (previousTime) frame.scrollTop += speed * (time - previousTime) / 1000;
+      previousTime = time;
+      if (frame.scrollTop >= frame.scrollHeight - frame.clientHeight - 1) {
+        stop("Finished · start over or scroll to another place");
+        return;
+      }
+      schedulePersist();
+      animationFrame = requestAnimationFrame(tick);
+    };
+    playButton.addEventListener("click", () => {
+      if (playing) {
+        stop();
+        return;
+      }
+      playing = true;
+      previousTime = 0;
+      paintPlayback();
+      animationFrame = requestAnimationFrame(tick);
+    });
+    startButton?.addEventListener("click", () => {
+      frame.scrollTop = 0;
+      persist();
+      if (!playing) paintPlayback("At the beginning · ready to play");
+    });
+    speedInput.addEventListener("input", () => {
+      speed = Number(speedInput.value);
+      if (speedValue) speedValue.textContent = `${speed} px/s`;
+      persist();
+      if (playing) paintPlayback();
+    });
+    ["wheel", "touchstart", "pointerdown"].forEach((eventName) => {
+      frame.addEventListener(eventName, () => {
+        if (playing) stop("Paused where you repositioned · press Play to resume");
+      }, { passive: true });
+    });
+    frame.addEventListener("scroll", schedulePersist, { passive: true });
+    requestAnimationFrame(() => {
+      frame.scrollTop = Math.min(saved.position, frame.scrollHeight - frame.clientHeight);
+    });
+    new MutationObserver((_records, observer) => {
+      if (backdrop.isConnected) return;
+      cancelAnimationFrame(animationFrame);
+      window.clearTimeout(saveTimer);
+      persist();
+      observer.disconnect();
+    }).observe(document.body, { childList: true });
+  }
   function quickStudyWords(text) {
     return text.match(/[\p{L}\p{N}][\p{L}\p{N}'’\-]*/gu) ?? [];
   }
@@ -1736,7 +1869,7 @@
     panel.innerHTML = `
     <div class="read-heading">
       <h2>Read</h2>
-      ${empty ? "" : `<span class="read-tools"><button class="btn secondary read-quick-study-button" type="button" id="quick-study">Quick Study</button><a class="btn secondary read-ai-button" href="${escapeAttr(buildReadBibleContextUrl(passage))}" target="_blank" rel="noopener noreferrer" title="Ask AI to identify this passage, explain its context, and link it in Bible">AI Bible context</a></span>`}
+      ${empty ? "" : `<span class="read-tools"><button class="btn secondary read-quick-study-button" type="button" id="quick-study">Quick Study</button><button class="btn secondary read-teleprompt-button" type="button" id="teleprompt">Teleprompt</button><a class="btn secondary read-ai-button" href="${escapeAttr(buildReadBibleContextUrl(passage))}" target="_blank" rel="noopener noreferrer" title="Ask AI to identify this passage, explain its context, and link it in Bible">AI Bible context</a></span>`}
     </div>
     ${empty ? `<p class="empty">This passage has no text yet. Go to <strong>Library</strong>, edit it, and paste the wording you want to memorize.</p>
            <div class="row stage-next-row"><button class="btn stage-next" type="button" id="mark-read" disabled>Mark Read complete \u2192 Understand</button></div>` : `<p class="empty">Read the full passage with segment markers. Absorb cadence before reducing.</p>
@@ -1752,6 +1885,7 @@
       onContinue();
     });
     panel.querySelector("#quick-study")?.addEventListener("click", () => openQuickStudy(passage));
+    panel.querySelector("#teleprompt")?.addEventListener("click", () => openTeleprompt(passage));
   }
   function renderUnderstand(panel, repo2, passage, onSaved) {
     if (passage.segments.length === 0) {
