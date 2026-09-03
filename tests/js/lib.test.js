@@ -7,7 +7,7 @@ import {
   localReduction,
   buildReductionPrompt,
 } from "../../public/assets/js/lib/reduction.js";
-import { applyHint, gradeOrder, moveItem } from "../../public/assets/js/lib/ordering.js";
+import { applyHint, gradeOrder, isNextWordTile, moveItem, tokenizeWords } from "../../public/assets/js/lib/ordering.js";
 import { recordAttempt } from "../../public/assets/js/lib/stats.js";
 import { buildSharePayload, encodeSharePayload, decodeSharePayload } from "../../public/assets/js/lib/share.js";
 import { sortScoreboard, toScoreboardRows } from "../../public/assets/js/lib/scoreboard.js";
@@ -39,6 +39,14 @@ test("ordering hints", () => {
   const first = applyHint(["c", "b", "a"], ["a", "b", "c"]);
   assert.equal(first.hintedIndex, 0);
   assert.deepEqual(first.ids, ["a", "c", "b"]);
+});
+
+test("word-game tiles", () => {
+  assert.deepEqual(tokenizeWords("  The LORD is my shepherd.  "), ["The", "LORD", "is", "my", "shepherd."]);
+  assert.deepEqual(tokenizeWords(""), []);
+  assert.equal(isNextWordTile(0, 0), true);
+  assert.equal(isNextWordTile(2, 1), false);
+  assert.equal(isNextWordTile(2, 2), true);
 });
 
 test("stats + share + scoreboard + visual + backup", () => {

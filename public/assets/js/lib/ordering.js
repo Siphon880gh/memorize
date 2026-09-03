@@ -39,10 +39,18 @@ function applyHint(currentIds, correctIds) {
   if (from === -1) return { ids: currentIds.slice(), hintedIndex: -1 };
   return { ids: moveItem(currentIds, from, nextHintIndex), hintedIndex: nextHintIndex };
 }
+function tokenizeWords(text) {
+  return String(text || "").trim().split(/\s+/).filter(Boolean);
+}
+function isNextWordTile(selectedCount, tileId) {
+  return tileId === selectedCount;
+}
 export {
   applyHint,
   gradeOrder,
+  isNextWordTile,
   moveItem,
   shuffleItems,
-  toOrderItems
+  toOrderItems,
+  tokenizeWords
 };

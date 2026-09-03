@@ -911,6 +911,12 @@
     }
     return arr;
   }
+  function tokenizeWords(text) {
+    return String(text || "").trim().split(/\s+/).filter(Boolean);
+  }
+  function isNextWordTile(selectedCount, tileId) {
+    return tileId === selectedCount;
+  }
   function gradeOrder(currentIds, correctIds) {
     const correctPositions = currentIds.map((id, i) => id === correctIds[i]);
     const allCorrect = correctPositions.every(Boolean) && currentIds.length === correctIds.length;
@@ -1227,6 +1233,17 @@
     "recall",
     "master"
   ];
+  var EXTRA_PRACTICE = [
+    { id: "listen", label: "Listen" },
+    { id: "type", label: "Type it" },
+    { id: "words", label: "Word game" },
+    { id: "quick-study", label: "Quick Study", overlay: true },
+    { id: "teleprompt", label: "Teleprompt", overlay: true }
+  ];
+  var EXTRA_PRACTICE_IDS = EXTRA_PRACTICE.filter((m) => !m.overlay).map((m) => m.id);
+  function isTrainingStage(stage) {
+    return STAGE_ORDER.includes(stage) || EXTRA_PRACTICE_IDS.includes(stage);
+  }
   function isComplete(passage, stage) {
     return Boolean(passage.stageProgress[stage]?.completed);
   }
@@ -1242,6 +1259,8 @@
     return STAGE_ORDER[idx + 1];
   }
   function stageLabel(stage) {
+    const extra = EXTRA_PRACTICE.find((m) => m.id === stage);
+    if (extra) return extra.label;
     return `${stage[0].toUpperCase()}${stage.slice(1)}`;
   }
   /** Next stage still needed for mastery credit (ordered path). */
@@ -1286,10 +1305,15 @@
       trainingUi.openTrack = null;
     }
     passage = syncSegments(repo2, passage);
+    stopPassageSpeech();
     const libraryCount = repo2.listPassages().length;
     const masteryFocus = masteryNext(passage);
-    let activeStage = STAGE_ORDER.includes(stage) ? stage : "read";
-    if (trainingUi.activeTrack === "mastery" && !isUnlocked(passage, activeStage)) {
+    let activeStage = isTrainingStage(stage) ? stage : "read";
+    if (EXTRA_PRACTICE_IDS.includes(activeStage)) {
+      trainingUi.activeTrack = "practice";
+      trainingUi.openTrack = "practice";
+    }
+    if (trainingUi.activeTrack === "mastery" && STAGE_ORDER.includes(activeStage) && !isUnlocked(passage, activeStage)) {
       activeStage = masteryFocus ?? "read";
       history.replaceState(null, "", `#passage/${passageId}/${activeStage}`);
     }
@@ -1355,7 +1379,10 @@
           </button>
           <div class="track-body" id="practice-body" ${practiceOpen ? "" : "hidden"}>
             <nav class="stage-nav" aria-label="Practice modes">
-              ${STAGE_ORDER.filter((s) => s !== "master").map((s) => {
+              <div class="stage-nav-row">
+                <p class="stage-nav-label">Any from mastery path</p>
+                <div class="stage-nav-pills">
+                  ${STAGE_ORDER.filter((s) => s !== "master").map((s) => {
       const done = isComplete(passage, s);
       const onPath = isUnlocked(passage, s);
       const classes = [
@@ -1368,6 +1395,18 @@
       const title = !onPath && !done ? "Practice freely \u2014 complete earlier stages for mastery credit" : stageLabel(s);
       return `<button type="button" class="${classes}" data-stage="${s}" title="${title}">${label}</button>`;
     }).join("")}
+                </div>
+              </div>
+              <div class="stage-nav-row">
+                <p class="stage-nav-label">More drills</p>
+                <div class="stage-nav-pills">
+                  ${EXTRA_PRACTICE.map((s) => {
+      const classes = ["stage-pill", "extra-drill", !s.overlay && s.id === activeStage ? "active" : ""].filter(Boolean).join(" ");
+      const attr = s.overlay ? `data-overlay="${s.id}"` : `data-stage="${s.id}"`;
+      return `<button type="button" class="${classes}" ${attr} title="${s.label}">${s.label}</button>`;
+    }).join("")}
+                </div>
+              </div>
             </nav>
           </div>
         </div>
@@ -1446,6 +1485,13 @@
         go(next, "practice");
       });
     });
+    root.querySelectorAll("[data-overlay]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.overlay;
+        if (id === "quick-study") openQuickStudy(passage);
+        else if (id === "teleprompt") openTeleprompt(passage);
+      });
+    });
     const panel = root.querySelector("#stage-panel");
     if (!panel) return;
     const continueRow = (from, label) => {
@@ -1519,6 +1565,12 @@
         Object.assign(passage, updated);
         go("read", "mastery");
       });
+    } else if (activeStage === "listen") {
+      renderListen(panel, passage);
+    } else if (activeStage === "type") {
+      renderTypeIt(panel, passage);
+    } else if (activeStage === "words") {
+      renderWordGame(panel, passage);
     }
   }
   function syncSegments(repo2, passage) {
@@ -1864,12 +1916,352 @@
     });
     paint();
   }
+  const LISTEN_STORAGE_KEY = "memorize-script.listen.v1";
+  const LISTEN_RATES = [
+    { value: 0.78, label: "Slow" },
+    { value: 0.92, label: "Natural" },
+    { value: 1.08, label: "Brisk" }
+  ];
+  var listenPlayback = { stop: false, playing: false };
+  var listenVoicesListener = null;
+  function stopPassageSpeech() {
+    listenPlayback.stop = true;
+    listenPlayback.playing = false;
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }
+  function loadListenPrefs() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LISTEN_STORAGE_KEY) || "null");
+      const rate = Number(saved?.rate);
+      return {
+        voiceURI: typeof saved?.voiceURI === "string" ? saved.voiceURI : "browser-default",
+        rate: LISTEN_RATES.some((item) => item.value === rate) ? rate : 0.92
+      };
+    } catch {
+      return { voiceURI: "browser-default", rate: 0.92 };
+    }
+  }
+  function saveListenPrefs(prefs) {
+    try {
+      localStorage.setItem(LISTEN_STORAGE_KEY, JSON.stringify(prefs));
+    } catch {
+      // Listening still works when storage is unavailable.
+    }
+  }
+  function drillLines(passage) {
+    return passage.segments.map((segment) => segment.text.trim()).filter(Boolean);
+  }
+  function renderListen(panel, passage) {
+    const lines = drillLines(passage);
+    if (!lines.length) {
+      panel.innerHTML = `<h2>Listen</h2><p class="empty">Add passage text first (Library \u2192 Edit), then return here.</p>`;
+      return;
+    }
+    const canSpeak = "speechSynthesis" in window;
+    let index = 0;
+    let prefs = loadListenPrefs();
+    let voices = canSpeak ? window.speechSynthesis.getVoices() : [];
+    const applyVoice = (utterance) => {
+      const selected = voices.find((voice) => voice.voiceURI === prefs.voiceURI);
+      if (selected) utterance.voice = selected;
+      utterance.rate = prefs.rate;
+      utterance.pitch = 1;
+    };
+    const speakAt = (start, throughRest) => {
+      if (!canSpeak) return;
+      listenPlayback.stop = false;
+      window.speechSynthesis.cancel();
+      listenPlayback.playing = true;
+      const speakOne = (i) => {
+        if (listenPlayback.stop || i >= lines.length) {
+          listenPlayback.playing = false;
+          paint();
+          return;
+        }
+        index = i;
+        paint();
+        const utterance = new SpeechSynthesisUtterance(lines[i]);
+        applyVoice(utterance);
+        utterance.onend = () => {
+          if (throughRest) speakOne(i + 1);
+          else {
+            listenPlayback.playing = false;
+            paint();
+          }
+        };
+        utterance.onerror = () => {
+          listenPlayback.playing = false;
+          paint();
+        };
+        window.speechSynthesis.speak(utterance);
+      };
+      speakOne(start);
+    };
+    const paint = () => {
+      const voiceOptions = [`<option value="browser-default" ${prefs.voiceURI === "browser-default" ? "selected" : ""}>Browser default</option>`].concat(
+        voices.map((voice) => `<option value="${esc2(voice.voiceURI)}" ${voice.voiceURI === prefs.voiceURI ? "selected" : ""}>${esc2(voice.name)} \xB7 ${esc2(voice.lang)}</option>`)
+      ).join("");
+      panel.innerHTML = `
+      <h2>Listen</h2>
+      <p class="empty">Hear the wording aloud, then say it back. Use one line, or play from here through the rest of the passage.</p>
+      <div class="drill-nav">
+        <button class="btn secondary" type="button" id="listen-prev" ${index === 0 ? "disabled" : ""}>Previous</button>
+        <p class="drill-progress">${index + 1} of ${lines.length}</p>
+        <button class="btn secondary" type="button" id="listen-next" ${index >= lines.length - 1 ? "disabled" : ""}>Next</button>
+      </div>
+      <ol class="listen-lines" id="listen-lines">
+        ${lines.map((line, i) => `<li class="listen-segment${i === index ? " is-current" : ""}"><span class="seg-idx">${i + 1}</span><span>${esc2(line)}</span></li>`).join("")}
+      </ol>
+      ${canSpeak ? `<div class="listen-controls">
+        <button class="btn" type="button" id="listen-hear">${listenPlayback.playing ? "Stop" : "Hear this line"}</button>
+        <button class="btn secondary" type="button" id="listen-play">${listenPlayback.playing ? "Stop" : "Play from here"}</button>
+        <label class="listen-select">Voice
+          <select id="listen-voice" aria-label="Choose a browser voice">${voiceOptions}</select>
+        </label>
+        <label class="listen-select">Speed
+          <select id="listen-rate" aria-label="Choose speech speed">
+            ${LISTEN_RATES.map((item) => `<option value="${item.value}" ${item.value === prefs.rate ? "selected" : ""}>${item.label}</option>`).join("")}
+          </select>
+        </label>
+      </div>` : `<p class="toast warn">This browser cannot speak the passage aloud. You can still read each line here.</p>`}
+    `;
+      panel.querySelector("#listen-prev")?.addEventListener("click", () => {
+        if (index === 0) return;
+        stopPassageSpeech();
+        index -= 1;
+        paint();
+      });
+      panel.querySelector("#listen-next")?.addEventListener("click", () => {
+        if (index >= lines.length - 1) return;
+        stopPassageSpeech();
+        index += 1;
+        paint();
+      });
+      panel.querySelector("#listen-hear")?.addEventListener("click", () => {
+        if (listenPlayback.playing) {
+          stopPassageSpeech();
+          paint();
+          return;
+        }
+        speakAt(index, false);
+      });
+      panel.querySelector("#listen-play")?.addEventListener("click", () => {
+        if (listenPlayback.playing) {
+          stopPassageSpeech();
+          paint();
+          return;
+        }
+        speakAt(index, true);
+      });
+      panel.querySelector("#listen-voice")?.addEventListener("change", (e) => {
+        prefs = { ...prefs, voiceURI: e.target.value };
+        saveListenPrefs(prefs);
+      });
+      panel.querySelector("#listen-rate")?.addEventListener("change", (e) => {
+        prefs = { ...prefs, rate: Number(e.target.value) };
+        saveListenPrefs(prefs);
+      });
+    };
+    if (canSpeak) {
+      if (listenVoicesListener) {
+        window.speechSynthesis.removeEventListener("voiceschanged", listenVoicesListener);
+      }
+      listenVoicesListener = () => {
+        if (!panel.isConnected) return;
+        voices = window.speechSynthesis.getVoices();
+        paint();
+      };
+      window.speechSynthesis.addEventListener("voiceschanged", listenVoicesListener);
+    }
+    paint();
+  }
+  function renderTypeIt(panel, passage) {
+    const lines = drillLines(passage);
+    if (!lines.length) {
+      panel.innerHTML = `<h2>Type it</h2><p class="empty">Add passage text first (Library \u2192 Edit), then return here.</p>`;
+      return;
+    }
+    let index = 0;
+    let typed = "";
+    let state = "idle";
+    const paint = () => {
+      const line = lines[index];
+      const toastText = state === "success" ? "Locked in \u2014 this line matches." : state === "error" ? "Not quite yet. Stay with every word, then try again." : "";
+      panel.innerHTML = `
+      <h2>Type it</h2>
+      <p class="empty">Keep the line in view and type it with attention. Matching is case-insensitive and ignores punctuation.</p>
+      <div class="drill-nav">
+        <button class="btn secondary" type="button" id="type-prev" ${index === 0 ? "disabled" : ""}>Previous</button>
+        <p class="drill-progress">${index + 1} of ${lines.length}</p>
+        <button class="btn secondary" type="button" id="type-next" ${index >= lines.length - 1 ? "disabled" : ""}>Next</button>
+      </div>
+      <blockquote class="drill-line">${esc2(line)}</blockquote>
+      <label>Your typing
+        <textarea id="type-text" placeholder="Type this line here\u2026">${esc2(typed)}</textarea>
+      </label>
+      <div class="row" style="margin-top: 18px;">
+        <button class="btn secondary" type="button" id="type-reset">Reset</button>
+        <button class="btn" type="button" id="type-check" ${typed.trim() ? "" : "disabled"}>Check my words</button>
+      </div>
+      <p class="toast" id="type-toast" ${toastText ? "" : "hidden"}>${esc2(toastText)}</p>
+      ${state === "success" && index < lines.length - 1 ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="type-advance">Next line</button></div>` : ""}
+    `;
+      const area = panel.querySelector("#type-text");
+      const checkBtn = panel.querySelector("#type-check");
+      const check = () => {
+        typed = area?.value ?? "";
+        if (!typed.trim()) {
+          state = "idle";
+          paint();
+          const toast = panel.querySelector("#type-toast");
+          if (toast) {
+            toast.hidden = false;
+            toast.textContent = "Type the line before checking.";
+          }
+          return;
+        }
+        state = normalizeRecall(typed) === normalizeRecall(line) ? "success" : "error";
+        paint();
+      };
+      area?.addEventListener("input", () => {
+        typed = area.value;
+        if (state !== "idle") {
+          state = "idle";
+          const toast = panel.querySelector("#type-toast");
+          if (toast) toast.hidden = true;
+        }
+        if (checkBtn) checkBtn.disabled = !typed.trim();
+      });
+      area?.addEventListener("keydown", (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+          event.preventDefault();
+          check();
+        }
+      });
+      panel.querySelector("#type-check")?.addEventListener("click", check);
+      panel.querySelector("#type-reset")?.addEventListener("click", () => {
+        typed = "";
+        state = "idle";
+        paint();
+      });
+      panel.querySelector("#type-prev")?.addEventListener("click", () => {
+        if (index === 0) return;
+        index -= 1;
+        typed = "";
+        state = "idle";
+        paint();
+      });
+      panel.querySelector("#type-next")?.addEventListener("click", () => {
+        if (index >= lines.length - 1) return;
+        index += 1;
+        typed = "";
+        state = "idle";
+        paint();
+      });
+      panel.querySelector("#type-advance")?.addEventListener("click", () => {
+        if (index >= lines.length - 1) return;
+        index += 1;
+        typed = "";
+        state = "idle";
+        paint();
+      });
+      if (state !== "success") area?.focus();
+    };
+    paint();
+  }
+  function renderWordGame(panel, passage) {
+    const lines = drillLines(passage);
+    if (!lines.length) {
+      panel.innerHTML = `<h2>Word game</h2><p class="empty">Add passage text first (Library \u2192 Edit), then return here.</p>`;
+      return;
+    }
+    let index = 0;
+    let tiles = [];
+    let selectedIds = [];
+    let state = "idle";
+    const setupLine = () => {
+      const tokens = tokenizeWords(lines[index]);
+      tiles = shuffleItems(tokens.map((word, id) => ({ id, word })));
+      selectedIds = [];
+      state = tokens.length ? "idle" : "success";
+    };
+    setupLine();
+    const paint = () => {
+      const tokens = tokenizeWords(lines[index]);
+      const selected = selectedIds.map((id) => tokens[id]).filter(Boolean);
+      const toastText = state === "success" ? "Locked in \u2014 you built this line." : state === "error" ? "Not that tile yet. Follow the sentence from the beginning." : "";
+      panel.innerHTML = `
+      <h2>Word game</h2>
+      <p class="empty">Tap the words in order. Start with the first word and let the line take shape.</p>
+      <div class="drill-nav">
+        <button class="btn secondary" type="button" id="words-prev" ${index === 0 ? "disabled" : ""}>Previous</button>
+        <p class="drill-progress">${index + 1} of ${lines.length}</p>
+        <button class="btn secondary" type="button" id="words-next" ${index >= lines.length - 1 ? "disabled" : ""}>Next</button>
+      </div>
+      <div class="word-built" aria-live="polite">
+        ${selected.length ? selected.map((word) => `<span class="word-chip">${esc2(word)}</span>`).join("") : `<p class="empty">Your sentence will take shape here.</p>`}
+      </div>
+      <div class="word-tiles" aria-label="Shuffled word tiles">
+        ${tiles.map((tile) => {
+        const used = selectedIds.includes(tile.id);
+        return `<button class="word-tile" type="button" data-tile="${tile.id}" ${used || state === "success" ? "disabled" : ""}>${esc2(tile.word)}</button>`;
+      }).join("")}
+      </div>
+      <div class="row">
+        <button class="btn secondary" type="button" id="words-reset">Shuffle and reset</button>
+      </div>
+      <p class="toast" id="words-toast" ${toastText ? "" : "hidden"}>${esc2(toastText)}</p>
+      ${state === "success" && index < lines.length - 1 ? `<div class="row stage-next-row"><button class="btn stage-next" type="button" id="words-advance">Next line</button></div>` : ""}
+    `;
+      panel.querySelectorAll("[data-tile]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const tileId = Number(button.dataset.tile);
+          if (Number.isNaN(tileId) || selectedIds.includes(tileId) || state === "success") return;
+          if (!isNextWordTile(selectedIds.length, tileId)) {
+            state = "error";
+            const toast = panel.querySelector("#words-toast");
+            if (toast) {
+              toast.hidden = false;
+              toast.textContent = "Not that tile yet. Follow the sentence from the beginning.";
+            }
+            return;
+          }
+          selectedIds = [...selectedIds, tileId];
+          state = selectedIds.length === tokens.length ? "success" : "idle";
+          paint();
+        });
+      });
+      panel.querySelector("#words-reset")?.addEventListener("click", () => {
+        setupLine();
+        paint();
+      });
+      panel.querySelector("#words-prev")?.addEventListener("click", () => {
+        if (index === 0) return;
+        index -= 1;
+        setupLine();
+        paint();
+      });
+      panel.querySelector("#words-next")?.addEventListener("click", () => {
+        if (index >= lines.length - 1) return;
+        index += 1;
+        setupLine();
+        paint();
+      });
+      panel.querySelector("#words-advance")?.addEventListener("click", () => {
+        if (index >= lines.length - 1) return;
+        index += 1;
+        setupLine();
+        paint();
+      });
+    };
+    paint();
+  }
   function renderRead(panel, _repo, passage, onContinue) {
     const empty = passage.segments.length === 0 || !passage.text.trim();
     panel.innerHTML = `
     <div class="read-heading">
       <h2>Read</h2>
-      ${empty ? "" : `<span class="read-tools"><button class="btn secondary read-quick-study-button" type="button" id="quick-study">Quick Study</button><button class="btn secondary read-teleprompt-button" type="button" id="teleprompt">Teleprompt</button><a class="btn secondary read-ai-button" href="${escapeAttr(buildReadBibleContextUrl(passage))}" target="_blank" rel="noopener noreferrer" title="Ask AI to identify this passage, explain its context, and link it in Bible">AI Bible context</a></span>`}
+      ${empty ? "" : `<span class="read-tools"><span class="read-ai-split" role="group" aria-label="AI Bible context"><a class="read-ai-main" href="${escapeAttr(buildReadBibleContextUrl(passage))}" target="_blank" rel="noopener noreferrer">AI Bible context</a><button class="read-ai-info" type="button" id="ai-bible-info" aria-label="What AI Bible context does">(i)</button></span></span>`}
     </div>
     ${empty ? `<p class="empty">This passage has no text yet. Go to <strong>Library</strong>, edit it, and paste the wording you want to memorize.</p>
            <div class="row stage-next-row"><button class="btn stage-next" type="button" id="mark-read" disabled>Mark Read complete \u2192 Understand</button></div>` : `<p class="empty">Read the full passage with segment markers. Absorb cadence before reducing.</p>
@@ -1884,8 +2276,14 @@
       if (empty) return;
       onContinue();
     });
-    panel.querySelector("#quick-study")?.addEventListener("click", () => openQuickStudy(passage));
-    panel.querySelector("#teleprompt")?.addEventListener("click", () => openTeleprompt(passage));
+    panel.querySelector("#ai-bible-info")?.addEventListener("click", () => {
+      openHelpModal(
+        "AI Bible context",
+        `<p>Opens ChatGPT in a new tab with a prompt already filled in for this passage.</p>
+         <p>ChatGPT is asked to identify where the wording is from in the Bible, explain the literary, historical, and theological context so it is not quoted apart from the surrounding passage, and finish with a link to those verses in the Bible reader.</p>
+         <p>This app does not call an AI API. You can read or edit the ChatGPT conversation after it opens.</p>`
+      );
+    });
   }
   function renderUnderstand(panel, repo2, passage, onSaved) {
     if (passage.segments.length === 0) {
@@ -2852,7 +3250,10 @@
     "visualize",
     "reconstruct",
     "recall",
-    "master"
+    "master",
+    "listen",
+    "type",
+    "words"
   ]);
   var STARTERS = OUR_LIBRARY.map((item) => item.starter);
   function findStarterMatch(starter) {
@@ -2927,6 +3328,7 @@
     );
   }
   function mount() {
+    stopPassageSpeech();
     healEmptyStarters();
     const hash = location.hash.replace(/^#/, "");
     const parts = hash.split("/").filter(Boolean);
