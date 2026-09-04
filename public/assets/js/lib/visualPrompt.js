@@ -12,7 +12,23 @@ function buildImagePrompt(segment, concept) {
     "Style: clear symbolic scene, strong focal subject, no text overlay, suitable as a mental memory palace image."
   ].join("\n");
 }
+function visualAnchorImageUrl(anchor) {
+  const fromImage = (anchor?.imageUrl || "").trim();
+  if (fromImage) return fromImage;
+  const noteOrUrl = (anchor?.userNote || "").trim();
+  return /^https?:\/\//i.test(noteOrUrl) ? noteOrUrl : "";
+}
+function photographicMemoryItems(passage) {
+  return (passage.segments || []).slice().sort((a, b) => a.index - b.index).map((seg) => ({
+    id: seg.id,
+    segmentIndex: seg.index,
+    text: seg.text,
+    url: visualAnchorImageUrl((passage.visualAnchors || []).find((a) => a.segmentId === seg.id))
+  }));
+}
 export {
   buildImagePrompt,
-  inferConcept
+  inferConcept,
+  photographicMemoryItems,
+  visualAnchorImageUrl
 };

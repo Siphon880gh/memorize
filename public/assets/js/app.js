@@ -1184,6 +1184,20 @@
       "Style: clear symbolic scene, strong focal subject, no text overlay, suitable as a mental memory palace image."
     ].join("\n");
   }
+  function visualAnchorImageUrl(anchor) {
+    const fromImage = (anchor?.imageUrl || "").trim();
+    if (fromImage) return fromImage;
+    const noteOrUrl = (anchor?.userNote || "").trim();
+    return /^https?:\/\//i.test(noteOrUrl) ? noteOrUrl : "";
+  }
+  function photographicMemoryItems(passage) {
+    return (passage.segments || []).slice().sort((a, b) => a.index - b.index).map((seg) => ({
+      id: seg.id,
+      segmentIndex: seg.index,
+      text: seg.text,
+      url: visualAnchorImageUrl((passage.visualAnchors || []).find((a) => a.segmentId === seg.id))
+    }));
+  }
 
   // src/ui/sharePanel.ts
   function mountShareControls(host, passage) {
@@ -2765,7 +2779,7 @@
         <li>Copy that tab\u2019s URL and paste it here</li>
       </ol>`;
   }
-  function openImageModal(title, imageUrl) {
+  function openImageModal(title, imageUrl, practice = null) {
     if (isHostLockedImageUrl(imageUrl)) {
       openHelpModal(
         title,
@@ -2778,11 +2792,167 @@
       title,
       `<figure class="visual-modal-figure">
         <img src="${esc2(imageUrl)}" alt="${esc2(title)}" referrerpolicy="no-referrer" />
-        <figcaption><a href="${esc2(imageUrl)}" target="_blank" rel="noopener noreferrer">Open in new tab</a></figcaption>
+        <figcaption class="visual-modal-caption"><a href="${esc2(imageUrl)}" target="_blank" rel="noopener noreferrer">Open in new tab</a>${practice ? `<button type="button" class="btn visual-modal-practice" id="visual-modal-practice">Practice photographic memory <span aria-hidden="true">→</span></button>` : ""}</figcaption>
       </figure>`,
       { media: true }
     );
+    if (practice) {
+      document.getElementById("visual-modal-practice")?.addEventListener("click", () => {
+        document.querySelector("#app-help-modal .modal-close")?.click();
+        const items = photographicMemoryItems(practice.passage);
+        const start = Math.max(0, items.findIndex((item) => item.id === practice.segmentId));
+        openPhotographicMemory(practice.passage, items, start);
+      });
+    }
   }
+  const PHOTO_MEMORY_PHASES = ["full", "topLeft", "topRight", "bottomLeft", "bottomRight", "hidden"];
+  const PHOTO_MEMORY_PHASE_LABELS = {
+    full: "Full picture", topLeft: "Top left", topRight: "Top right",
+    bottomLeft: "Bottom left", bottomRight: "Bottom right", hidden: "No picture"
+  };
+  const PHOTO_MEMORY_RADIUS_MIN = 8;
+  const PHOTO_MEMORY_RADIUS_MAX = 48;
+
+  function photoMemoryClipPath(phase) {
+    return {
+      full: "none", topLeft: "inset(0 50% 50% 0)", topRight: "inset(0 0 50% 50%)",
+      bottomLeft: "inset(50% 50% 0 0)", bottomRight: "inset(50% 0 0 50%)", hidden: "inset(100%)"
+    }[phase] || "none";
+  }
+
+  function openPhotographicMemory(passage, clips, startIndex = 0) {
+    document.getElementById("photographic-memory-modal")?.remove();
+    if (!clips.length) return;
+    let index = ((startIndex % clips.length) + clips.length) % clips.length;
+    let mode = "piece";
+    let phase = "full";
+    let radius = 18;
+    let pointer = null;
+    let holding = false;
+    let photoSize = { width: 0, height: 0 };
+    const usableUrl = (clip) => clip.url && !isHostLockedImageUrl(clip.url) ? clip.url : "";
+    const nextPhase = () => { phase = PHOTO_MEMORY_PHASES[(PHOTO_MEMORY_PHASES.indexOf(phase) + 1) % PHOTO_MEMORY_PHASES.length]; };
+    const wrap = (delta) => { index = (index + delta + clips.length) % clips.length; phase = "full"; photoSize = { width: 0, height: 0 }; pointer = null; holding = false; };
+    const backdrop = document.createElement("div");
+    backdrop.id = "photographic-memory-modal";
+    backdrop.className = "modal-backdrop photographic-memory-backdrop";
+    backdrop.innerHTML = `<section class="photographic-memory" role="dialog" aria-modal="true" aria-labelledby="photographic-memory-title">
+      <header class="photographic-memory-head"><div class="photographic-memory-heading"><button type="button" class="photographic-memory-close" aria-label="Close photographic memory practice">×</button><div><p class="photographic-memory-kicker" id="photographic-memory-title">Photographic memory practice</p><p class="photographic-memory-instruction"></p></div></div><div class="photographic-memory-modes" role="group" aria-label="Practice mode"><button type="button" data-photo-mode="piece">Piece by piece</button><button type="button" data-photo-mode="review">Mouse reviewing</button></div></header>
+      <blockquote class="photographic-memory-quote"></blockquote><div class="photographic-memory-stage-row"><button type="button" class="photographic-memory-chevron" data-photo-prev aria-label="Previous line">‹</button><div class="photographic-memory-stage"><figure class="photographic-memory-figure"><img class="photographic-memory-image" alt="" draggable="false" /></figure></div><button type="button" class="photographic-memory-chevron" data-photo-next aria-label="Next line">›</button></div><footer class="photographic-memory-footer"></footer></section>`;
+    document.body.appendChild(backdrop);
+    const image = backdrop.querySelector(".photographic-memory-image");
+    const figure = backdrop.querySelector(".photographic-memory-figure");
+    const stage = backdrop.querySelector(".photographic-memory-stage");
+    const instruction = backdrop.querySelector(".photographic-memory-instruction");
+    const quote = backdrop.querySelector(".photographic-memory-quote");
+    const footer = backdrop.querySelector(".photographic-memory-footer");
+    const close = () => { document.removeEventListener("keydown", onKey, true); backdrop.remove(); };
+    const paintImage = () => {
+      if (mode === "piece") {
+        image.style.clipPath = photoMemoryClipPath(phase);
+        image.style.maskImage = "none";
+        image.style.webkitMaskImage = "none";
+        figure.classList.add("is-piece"); figure.classList.remove("is-review");
+      } else {
+        const radiusPx = Math.min(photoSize.width, photoSize.height) * Math.min(PHOTO_MEMORY_RADIUS_MAX, Math.max(PHOTO_MEMORY_RADIUS_MIN, radius)) / 100;
+        const mask = !holding && pointer ? `radial-gradient(${radiusPx}px at ${pointer.x}px ${pointer.y}px, #000 92%, transparent 100%)` : "none";
+        image.style.clipPath = "none"; image.style.maskImage = mask; image.style.webkitMaskImage = mask;
+        figure.classList.remove("is-piece"); figure.classList.add("is-review");
+      }
+    };
+    const measure = () => {
+      if (!image.naturalWidth || !stage.clientWidth || !stage.clientHeight) return;
+      const scale = Math.min(stage.clientWidth / image.naturalWidth, stage.clientHeight / image.naturalHeight);
+      photoSize = { width: image.naturalWidth * scale, height: image.naturalHeight * scale };
+      figure.style.width = `${photoSize.width}px`;
+      figure.style.height = `${photoSize.height}px`;
+      figure.style.opacity = "1";
+      image.style.width = "100%";
+      image.style.height = "100%";
+      paintImage();
+    };
+    const resetFigureBox = () => {
+      photoSize = { width: 0, height: 0 };
+      figure.style.width = "";
+      figure.style.height = "";
+      figure.style.opacity = "1";
+      image.style.width = "";
+      image.style.height = "";
+    };
+    const updatePointer = (event) => { const rect = image.getBoundingClientRect(); pointer = { x: Math.min(rect.width, Math.max(0, event.clientX - rect.left)), y: Math.min(rect.height, Math.max(0, event.clientY - rect.top)) }; paintImage(); };
+    const applyPhase = () => { paintChrome(); paintImage(); };
+    const paintChrome = () => {
+      const clip = clips[index];
+      instruction.textContent = mode === "piece"
+        ? "Arrows move line by line. Cycle through fragments of this line’s picture, including the whole image and none of it."
+        : "Move over this line’s picture to review a circle. Scroll to change its radius; hold to see the whole image.";
+      quote.textContent = `“${(clip.text || "").trim() || passage.title}”`;
+      backdrop.querySelector("[data-photo-prev]").disabled = clips.length < 2;
+      backdrop.querySelector("[data-photo-next]").disabled = clips.length < 2;
+      backdrop.querySelectorAll("[data-photo-mode]").forEach((button) => button.classList.toggle("is-active", button.dataset.photoMode === mode));
+      if (mode === "piece") footer.innerHTML = `<div><p class="photographic-memory-status">${PHOTO_MEMORY_PHASE_LABELS[phase]}</p><div class="photographic-memory-dots">${PHOTO_MEMORY_PHASES.map((item) => `<button type="button" data-photo-phase="${item}" class="${item === phase ? "is-active" : ""}" aria-label="${PHOTO_MEMORY_PHASE_LABELS[item]}" aria-current="${item === phase ? "true" : "false"}"></button>`).join("")}</div></div><button type="button" class="btn photographic-memory-cycle" data-photo-cycle>Cycle</button>`;
+      else footer.innerHTML = `<label class="photographic-memory-radius">Reveal radius <output>${radius}%</output><input type="range" min="${PHOTO_MEMORY_RADIUS_MIN}" max="${PHOTO_MEMORY_RADIUS_MAX}" value="${radius}" /></label>`;
+      footer.querySelectorAll("[data-photo-phase]").forEach((button) => button.addEventListener("click", () => { phase = button.dataset.photoPhase; applyPhase(); }));
+      footer.querySelector("[data-photo-cycle]")?.addEventListener("click", () => { nextPhase(); applyPhase(); });
+      footer.querySelector("input")?.addEventListener("input", (event) => { radius = Number(event.target.value); footer.querySelector("output").textContent = `${radius}%`; paintImage(); });
+    };
+    const loadClip = () => {
+      const clip = clips[index];
+      const url = usableUrl(clip);
+      image.alt = url ? `Picture for line ${clip.segmentIndex + 1}` : "";
+      image.referrerPolicy = "no-referrer";
+      image.onload = measure;
+      image.onerror = null;
+      if (!url) {
+        image.removeAttribute("src");
+        resetFigureBox();
+        figure.style.width = "min(100%, 36rem)";
+        figure.style.height = "12rem";
+        image.style.clipPath = "none";
+        image.style.maskImage = "none";
+        image.style.webkitMaskImage = "none";
+        if (clip.url) {
+          footer.innerHTML = `<p class="photographic-memory-load-error">This picture needs a shared image URL. <a href="${esc2(clip.url)}" target="_blank" rel="noopener noreferrer">Open saved link</a>.</p>`;
+        }
+        return;
+      }
+      image.onerror = () => {
+        resetFigureBox();
+        figure.style.width = "min(100%, 36rem)";
+        figure.style.height = "12rem";
+        footer.innerHTML = `<p class="photographic-memory-load-error">This picture could not be loaded here. <a href="${esc2(clip.url)}" target="_blank" rel="noopener noreferrer">Open the saved image link</a>.</p>`;
+      };
+      if (image.getAttribute("src") !== url) {
+        resetFigureBox();
+        image.src = url;
+      }
+      if (image.complete && image.naturalWidth) measure();
+      else paintImage();
+    };
+    const paint = () => { paintChrome(); loadClip(); };
+    const onKey = (event) => {
+      if (event.key === "Escape") { event.preventDefault(); close(); }
+      else if (event.key === "ArrowLeft" && clips.length > 1) { event.preventDefault(); wrap(-1); paint(); }
+      else if (event.key === "ArrowRight" && clips.length > 1) { event.preventDefault(); wrap(1); paint(); }
+      else if (event.key === " " && mode === "piece" && !event.target.closest("button, input")) { event.preventDefault(); nextPhase(); applyPhase(); }
+    };
+    backdrop.addEventListener("click", (event) => { if (event.target === backdrop) close(); });
+    backdrop.querySelector(".photographic-memory-close").addEventListener("click", close);
+    backdrop.querySelector("[data-photo-prev]").addEventListener("click", () => { wrap(-1); paint(); });
+    backdrop.querySelector("[data-photo-next]").addEventListener("click", () => { wrap(1); paint(); });
+    backdrop.querySelectorAll("[data-photo-mode]").forEach((button) => button.addEventListener("click", () => { mode = button.dataset.photoMode; holding = false; pointer = null; paint(); }));
+    figure.addEventListener("click", () => { if (mode === "piece") { nextPhase(); applyPhase(); } });
+    figure.addEventListener("pointermove", (event) => { if (mode === "review") updatePointer(event); });
+    figure.addEventListener("pointerleave", () => { if (!holding) { pointer = null; paintImage(); } });
+    figure.addEventListener("pointerdown", (event) => { if (mode !== "review") return; holding = true; figure.setPointerCapture?.(event.pointerId); updatePointer(event); });
+    figure.addEventListener("pointerup", (event) => { if (mode !== "review") return; holding = false; updatePointer(event); });
+    figure.addEventListener("wheel", (event) => { if (mode !== "review") return; event.preventDefault(); radius = Math.min(PHOTO_MEMORY_RADIUS_MAX, Math.max(PHOTO_MEMORY_RADIUS_MIN, radius + (event.deltaY < 0 ? 1 : -1))); applyPhase(); }, { passive: false });
+    new ResizeObserver(measure).observe(stage);
+    document.addEventListener("keydown", onKey, true);
+    backdrop.querySelector(".photographic-memory-close").focus();
+    paint();
+  }
+
   function renderVisualize(panel, repo2, passage, onChanged) {
     if (passage.segments.length === 0) {
       panel.innerHTML = `<h2>Visualize</h2><p class="empty">Add passage text first, then build visual anchors.</p>`;
@@ -2802,7 +2972,7 @@
         const concept = anchor?.concept || inferConcept(seg.text);
         const prompt = anchor?.imagePrompt || buildImagePrompt(seg, concept);
         const noteOrUrl = anchor?.userNote || anchor?.imageUrl || "";
-        const imageUrl = anchor?.imageUrl?.trim() || (/^https?:\/\//i.test(noteOrUrl.trim()) ? noteOrUrl.trim() : "");
+        const imageUrl = visualAnchorImageUrl(anchor);
         const hostLocked = Boolean(imageUrl && isHostLockedImageUrl(imageUrl));
         const canEmbed = Boolean(imageUrl && !hostLocked);
         const filled = noteFilled(anchor);
@@ -2819,7 +2989,7 @@
                   </button>` : hostLocked ? `<button type="button" class="visual-link-chip" data-open-image="${seg.id}">Why no preview?</button>` : ""}
                   <span class="visual-help-title">
                     <span class="visual-help-status">${filled ? "Visual anchor saved locally" : "Visual anchor (optional)"}</span>
-                    <span class="visual-help-hint">${filled ? hostLocked ? "Private ChatGPT link \u2014 Share the thread, open the shared image URL instead" : "Collapsed \u2014 expand to update or reset" : "Expand to add a note or image URL"}</span>
+                    <span class="visual-help-hint">${filled ? hostLocked ? "Private ChatGPT link \u2014 Share the thread, open the shared thread, and copy that image URL instead" : "Collapsed \u2014 expand to update or reset" : "Expand to add a note or image URL"}</span>
                     ${notePreview ? `<span class="visual-note-snip">${esc2(notePreview.length > 72 ? `${notePreview.slice(0, 72)}\u2026` : notePreview)}</span>` : ""}
                   </span>
                   <span class="req-badge ${filled ? "ok" : "missing"}">${filled ? "Saved" : "Optional"}</span>
@@ -2869,11 +3039,7 @@
         el.hidden = false;
         el.textContent = msg;
       };
-      const imageUrlFor = (id) => {
-        const anchor = passage.visualAnchors.find((a) => a.segmentId === id);
-        const noteOrUrl = anchor?.userNote || anchor?.imageUrl || "";
-        return anchor?.imageUrl?.trim() || (/^https?:\/\//i.test(noteOrUrl.trim()) ? noteOrUrl.trim() : "");
-      };
+      const imageUrlFor = (id) => visualAnchorImageUrl(passage.visualAnchors.find((a) => a.segmentId === id));
       panel.querySelectorAll("[data-copy]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const id = btn.dataset.copy;
@@ -2910,7 +3076,7 @@
           const url = imageUrlFor(id);
           if (!url) return;
           const seg = passage.segments.find((s) => s.id === id);
-          openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url);
+          openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url, seg ? { passage, segmentId: seg.id, segmentIndex: seg.index } : null);
         };
         btn.addEventListener("mousedown", (e) => e.stopPropagation());
         btn.addEventListener("click", open);
@@ -2996,7 +3162,7 @@
             e.preventDefault();
             e.stopPropagation();
             const seg = passage.segments.find((s) => s.id === id);
-            openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url);
+            openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url, seg ? { passage, segmentId: seg.id, segmentIndex: seg.index } : null);
           });
           wrap.replaceWith(chip);
           head.classList.remove("has-thumb");
@@ -3025,7 +3191,7 @@
               e.stopPropagation();
               if (!url) return;
               const seg = passage.segments.find((s) => s.id === id);
-              openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url);
+              openImageModal(seg ? `Segment ${seg.index + 1} image` : "Image preview", url, seg ? { passage, segmentId: seg.id, segmentIndex: seg.index } : null);
             });
           });
         });

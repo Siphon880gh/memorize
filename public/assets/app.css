@@ -1660,6 +1660,122 @@ button.linkish {
   padding-top: 0.85rem;
 }
 
+.photographic-memory-status {
+  margin: 0;
+  color: var(--brass);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.photographic-memory-backdrop {
+  padding: 0.75rem;
+  background: rgba(38, 50, 79, 0.58);
+}
+
+.photographic-memory {
+  width: min(66rem, 100%);
+  height: min(92dvh, 52rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1.15rem 1.25rem 1.2rem;
+  color: var(--ink);
+  background:
+    radial-gradient(800px 360px at 12% 0%, rgba(255, 255, 255, 0.62), transparent 60%),
+    repeating-linear-gradient(-22deg, rgba(35, 38, 47, 0.03) 0 1px, transparent 1px 12px),
+    #efe7d7;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.photographic-memory-head,
+.photographic-memory-heading,
+.photographic-memory-modes,
+.photographic-memory-stage-row,
+.photographic-memory-footer {
+  display: flex;
+  align-items: center;
+}
+
+.photographic-memory-head {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.photographic-memory-heading { align-items: flex-start; gap: 0.75rem; min-width: 0; }
+.photographic-memory-kicker { margin: 0; color: var(--navy); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.photographic-memory-instruction { margin: 0.3rem 0 0; color: var(--ink-soft); font-size: 0.9rem; line-height: 1.45; }
+.photographic-memory-close,
+.photographic-memory-chevron {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: var(--navy);
+  color: var(--paper-2);
+  cursor: pointer;
+}
+.photographic-memory-close { width: 2.35rem; height: 2.35rem; font-size: 1.55rem; line-height: 1; }
+.photographic-memory-modes { padding: 0.22rem; gap: 0.18rem; border-radius: var(--r-pill); background: color-mix(in srgb, var(--navy) 10%, transparent); }
+.photographic-memory-modes button { border: 0; border-radius: var(--r-pill); padding: 0.48rem 0.75rem; color: var(--ink-soft); background: transparent; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.photographic-memory-modes button.is-active { color: var(--paper-2); background: var(--navy); }
+.photographic-memory-quote {
+  flex: 0 1 auto;
+  max-height: 22%;
+  overflow: auto;
+  margin: 1rem 0 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  line-height: 1.35;
+}
+.photographic-memory-stage-row { flex: 1 1 auto; min-height: 0; gap: 0.75rem; margin-top: 0.8rem; }
+.photographic-memory-stage { display: flex; align-items: center; justify-content: center; flex: 1 1 auto; min-width: 0; min-height: 8rem; }
+.photographic-memory-figure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: hidden;
+  background: var(--paper-sunk);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+.photographic-memory-figure.is-review { cursor: crosshair; }
+.photographic-memory-image { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.photographic-memory-chevron { width: 2.65rem; height: 2.65rem; font-size: 2rem; line-height: 1; }
+.photographic-memory-chevron:hover:not(:disabled), .photographic-memory-close:hover { background: var(--navy-soft); }
+.photographic-memory-chevron:disabled { opacity: 0.3; cursor: default; }
+.photographic-memory-footer { justify-content: space-between; gap: 1rem; min-height: 3.4rem; margin-top: 0.8rem; }
+.photographic-memory-dots { display: flex; gap: 0.42rem; margin-top: 0.5rem; }
+.photographic-memory-dots button { width: 0.68rem; height: 0.68rem; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--navy) 25%, transparent); cursor: pointer; }
+.photographic-memory-dots button.is-active { background: var(--navy); }
+.photographic-memory-cycle { background: var(--navy); }
+.photographic-memory-radius { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.35rem 0.75rem; width: 100%; color: var(--navy); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.photographic-memory-radius output { color: var(--ink-soft); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.photographic-memory-radius input { grid-column: 1 / -1; padding: 0; accent-color: var(--brass); }
+.photographic-memory-load-error { margin: 0; color: var(--danger); font-size: 0.9rem; }
+.photographic-memory-load-error a { color: inherit; font-weight: 700; }
+
+@media (max-width: 640px) {
+  .photographic-memory { height: calc(100dvh - 1rem); padding: 0.85rem; border-radius: var(--r-md); }
+  .photographic-memory-head { flex-direction: column; }
+  .photographic-memory-modes { align-self: stretch; }
+  .photographic-memory-modes button { flex: 1; }
+  .photographic-memory-stage-row { gap: 0.35rem; }
+  .photographic-memory-chevron { width: 2.2rem; height: 2.2rem; }
+}
+
 .visual-card-label {
   margin: 0 0 0.25rem;
   font-size: 0.85rem;
@@ -1846,8 +1962,30 @@ button.linkish {
   background: var(--paper-sunk);
 }
 
-.visual-modal-figure figcaption {
+.visual-modal-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem;
   margin-top: 0.65rem;
+}
+
+.visual-modal-caption a {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.visual-modal-practice {
+  background: var(--navy);
+  white-space: nowrap;
+}
+
+.visual-modal-practice:hover {
+  background: var(--navy-soft);
+}
+
+.visual-modal-figure figcaption {
   font-size: 0.9rem;
 }
 

@@ -11,7 +11,7 @@ import { applyHint, gradeOrder, isNextWordTile, moveItem, tokenizeWords } from "
 import { recordAttempt } from "../../public/assets/js/lib/stats.js";
 import { buildSharePayload, encodeSharePayload, decodeSharePayload } from "../../public/assets/js/lib/share.js";
 import { sortScoreboard, toScoreboardRows } from "../../public/assets/js/lib/scoreboard.js";
-import { buildImagePrompt } from "../../public/assets/js/lib/visualPrompt.js";
+import { buildImagePrompt, photographicMemoryItems } from "../../public/assets/js/lib/visualPrompt.js";
 import { exportDocument, importDocument } from "../../public/assets/js/lib/backup.js";
 import { emptyDocument } from "../../public/assets/js/storage/repository.js";
 import { emptyStats } from "../../public/assets/js/types.js";
@@ -93,6 +93,22 @@ test("stats + share + scoreboard + visual + backup", () => {
   const prompt = buildImagePrompt(passage.segments[0], "wings");
   assert.match(prompt, /wings/);
   assert.match(prompt, /A\./);
+
+  const items = photographicMemoryItems({
+    ...passage,
+    text: "A. B.",
+    visualAnchors: [
+      { segmentId: "a", imageUrl: "https://example.com/a.jpg" },
+      { segmentId: "b", userNote: "https://example.com/b.jpg" },
+    ],
+  });
+  assert.equal(items.length, 2);
+  assert.equal(items[0].text, "A.");
+  assert.equal(items[1].text, "B.");
+  assert.notEqual(items[0].text, "A. B.");
+  assert.equal(items[0].url, "https://example.com/a.jpg");
+  assert.equal(items[1].url, "https://example.com/b.jpg");
+  assert.equal(items.findIndex((item) => item.id === "b"), 1);
 
   const doc = emptyDocument();
   doc.passages.push(updated);
