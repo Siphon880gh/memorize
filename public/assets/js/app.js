@@ -2953,6 +2953,8 @@
     paint();
   }
 
+  var WHY_NOT_AUTO = `<details class="why-not-auto"><summary class="why-not-auto__summary"><span class="why-not-auto__icon" aria-hidden="true">i</span> Why is this not automatic</summary><div class="why-not-auto__body"><p>Weng provides this service for free and cannot cover the ongoing cost of AI tokens. That's why this Prompt Builder is designed to let users supply their own AI processing resources rather than having the app pay for them. This is also why AI processing isn't integrated directly into the app for a more seamless experience.</p><p>There are several ways to accomplish this:</p><ol><li><strong>Copy the generated prompt into ChatGPT or Claude:</strong> Users can use their existing AI subscriptions to process the prompt.</li><li><strong>Copy the generated prompt into an AI harness like Cursor or Claude Code:</strong> Users can leverage their own AI coding environments and available token allowances.</li><li><strong>Provide their own API key:</strong> The app could process prompts directly using the user's API key, with usage billed to the user. However, this requires trusting that the app does not store, log, or copy the key. This is generally easier to verify with a locally running application or a Chrome extension, although neither is inherently secure without reviewing how it handles credentials.</li></ol><p><strong>For now, letting you use your own AI tools is the most practical approach.</strong> It keeps the service free while allowing you to use AI resources you already have access to. This app uses the method best suited to its particular workflow.</p><p>If the service eventually becomes commercial and can sustain the cost of AI tokens, AI processing could be integrated directly into the app for a more seamless experience.</p></div></details>`;
+
   function renderVisualize(panel, repo2, passage, onChanged) {
     if (passage.segments.length === 0) {
       panel.innerHTML = `<h2>Visualize</h2><p class="empty">Add passage text first, then build visual anchors.</p>`;
@@ -2966,6 +2968,7 @@
       panel.innerHTML = `
       <h2>Visualize</h2>
       <p class="empty">Optional: build a mental picture for any segment that helps. Copy a prompt into ChatGPT, generate an image if you want, then <strong>Share the thread</strong>, open the shared thread, open the image in a new tab, and paste that URL here (private ChatGPT file links need login and will not preview). Saved anchors collapse \u2014 expand to update or reset (${saved} saved).</p>
+      ${WHY_NOT_AUTO}
       <div class="grid">
         ${passage.segments.map((seg) => {
         const anchor = passage.visualAnchors.find((a) => a.segmentId === seg.id);
@@ -3275,6 +3278,7 @@
               <li>Copy ChatGPT\u2019s answer into the required field, then save</li>
             </ol>
             <p class="empty reduce-help-alt">Or switch cue level to <strong>First words</strong>, <strong>First letters</strong>, or <strong>No hints</strong> (no ChatGPT needed).</p>`}
+              ${WHY_NOT_AUTO}
               <label>1. ChatGPT prompt
                 <textarea id="ai-prompt" readonly>${esc2(buildReductionPrompt(pasteMode, passage.title, passage.text))}</textarea>
               </label>
