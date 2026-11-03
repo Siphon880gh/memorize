@@ -349,6 +349,29 @@ textarea {
   border-color: var(--line-strong);
 }
 
+.btn.secondary.is-disabled,
+.btn.secondary[aria-disabled="true"] {
+  opacity: 0.4;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.btn.secondary.is-disabled:hover,
+.btn.secondary[aria-disabled="true"]:hover {
+  background: transparent;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.prompt-handoff-hint {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+}
+
+.prompt-handoff-hint.is-stale {
+  color: #8a5a00;
+}
+
 /* Strongest CTA: advance to the next training stage */
 .btn.stage-next {
   background: var(--navy);

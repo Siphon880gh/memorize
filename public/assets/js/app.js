@@ -2953,6 +2953,28 @@
     paint();
   }
 
+  function syncChatHandoff(serviceEls, hintEl, copiedText, currentText) {
+    const ready = copiedText !== null && copiedText === currentText;
+    const why = copiedText === null ? "Copy the prompt first" : "Prompt changed, copy again";
+    (serviceEls || []).forEach((a) => {
+      if (!a) return;
+      a.classList.toggle("is-disabled", !ready);
+      if (ready) {
+        a.removeAttribute("aria-disabled");
+        a.removeAttribute("title");
+      } else {
+        a.setAttribute("aria-disabled", "true");
+        a.title = why;
+      }
+    });
+    if (hintEl) {
+      hintEl.textContent = ready ? "" : why;
+      hintEl.hidden = ready;
+      hintEl.classList.toggle("is-stale", !ready && copiedText !== null);
+    }
+    return ready;
+  }
+
   var WHY_NOT_AUTO = `<details class="why-not-auto"><summary class="why-not-auto__summary"><span class="why-not-auto__icon" aria-hidden="true">i</span> Why is this not automatic</summary><div class="why-not-auto__body"><p>Weng provides this service for free and cannot cover the ongoing cost of AI tokens. That's why this Prompt Builder is designed to let users supply their own AI processing resources rather than having the app pay for them. This is also why AI processing isn't integrated directly into the app for a more seamless experience.</p><p>There are several ways to accomplish this:</p><ol><li><strong>Copy the generated prompt into ChatGPT or Claude:</strong> Users can use their existing AI subscriptions to process the prompt.</li><li><strong>Copy the generated prompt into an AI harness like Cursor or Claude Code:</strong> Users can leverage their own AI coding environments and available token allowances.</li><li><strong>Provide their own API key:</strong> The app could process prompts directly using the user's API key, with usage billed to the user. However, this requires trusting that the app does not store, log, or copy the key. This is generally easier to verify with a locally running application or a Chrome extension, although neither is inherently secure without reviewing how it handles credentials.</li></ol><p><strong>For now, letting you use your own AI tools is the most practical approach.</strong> It keeps the service free while allowing you to use AI resources you already have access to. This app uses the method best suited to its particular workflow.</p><p>If the service eventually becomes commercial and can sustain the cost of AI tokens, AI processing could be integrated directly into the app for a more seamless experience.</p></div></details>`;
 
   function renderVisualize(panel, repo2, passage, onChanged) {
@@ -2961,6 +2983,7 @@
       return;
     }
     const noteFilled = (a) => Boolean(a?.userNote?.trim() || a?.imageUrl?.trim());
+    const copiedById = {};
     const paint = () => {
       const saved = passage.segments.filter(
         (s) => noteFilled(passage.visualAnchors.find((a) => a.segmentId === s.id))
@@ -3006,8 +3029,10 @@
                     <textarea data-prompt="${seg.id}" readonly>${esc2(prompt)}</textarea>
                   </label>
                   <div class="row prompt-actions">
-                    <button class="btn secondary" type="button" data-copy="${seg.id}">1. Copy image prompt</button>
-                    <a class="btn secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">2. Open ChatGPT</a>
+                    <button class="btn secondary" type="button" data-copy="${seg.id}">Copy image prompt</button>
+                    <a class="btn secondary is-disabled" data-open-chatgpt="${seg.id}" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-disabled="true" title="Copy the prompt first">ChatGPT</a>
+                    <a class="btn secondary is-disabled" data-open-claude="${seg.id}" href="https://claude.ai/new" target="_blank" rel="noopener noreferrer" aria-disabled="true" title="Copy the prompt first">Claude</a>
+                    <span class="empty prompt-handoff-hint" data-handoff-hint="${seg.id}" aria-live="polite">Copy the prompt first</span>
                   </div>
                   <label>
                     <span class="label-row">
@@ -3043,12 +3068,39 @@
         el.textContent = msg;
       };
       const imageUrlFor = (id) => visualAnchorImageUrl(passage.visualAnchors.find((a) => a.segmentId === id));
+      const syncFor = (id) => {
+        const text = panel.querySelector(`[data-prompt="${id}"]`)?.value ?? "";
+        return syncChatHandoff(
+          [
+            panel.querySelector(`[data-open-chatgpt="${id}"]`),
+            panel.querySelector(`[data-open-claude="${id}"]`)
+          ],
+          panel.querySelector(`[data-handoff-hint="${id}"]`),
+          copiedById[id] ?? null,
+          text
+        );
+      };
       panel.querySelectorAll("[data-copy]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const id = btn.dataset.copy;
           const text = panel.querySelector(`[data-prompt="${id}"]`)?.value ?? "";
-          await navigator.clipboard.writeText(text);
-          toast("Image prompt copied \u2014 open ChatGPT and paste it.");
+          try {
+            await navigator.clipboard.writeText(text);
+          } catch {
+            /* unlock ChatGPT / Claude even if clipboard is blocked; the preview is still on screen */
+          }
+          copiedById[id] = text;
+          syncFor(id);
+          toast("Image prompt copied \u2014 open ChatGPT or Claude and paste it.");
+        });
+      });
+      panel.querySelectorAll("[data-open-chatgpt], [data-open-claude]").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          const id = a.dataset.openChatgpt || a.dataset.openClaude;
+          if (!syncFor(id)) {
+            e.preventDefault();
+            panel.querySelector(`[data-copy="${id}"]`)?.focus();
+          }
         });
       });
       panel.querySelectorAll("[data-help-note]").forEach((btn) => {
@@ -3206,6 +3258,7 @@
           if (!seg) return;
           const area = panel.querySelector(`[data-prompt="${id}"]`);
           if (area) area.value = buildImagePrompt(seg, input.value);
+          syncFor(id);
         });
       });
       panel.querySelector("#mark-visualize")?.addEventListener("click", () => {
@@ -3214,6 +3267,7 @@
         toast("Visualize complete.");
         onChanged(updated);
       });
+      Object.keys(copiedById).forEach(syncFor);
     };
     paint();
   }
@@ -3228,6 +3282,7 @@
     let level = initialReduceLevel(passage);
     let proficiency = passage.reduceProficiency && REDUCE_PROFICIENCY.some((p) => p.id === passage.reduceProficiency) ? passage.reduceProficiency : level === "full" ? "first_words" : level;
     let reveal = false;
+    let copiedReducePrompt = null;
     const canComplete = (prof) => {
       if (!prof || !REDUCE_PROFICIENCY.some((p) => p.id === prof)) {
         return { ok: false, reason: "Choose the cue format you are proficient with (not Full text)." };
@@ -3282,9 +3337,11 @@
               <label>1. ChatGPT prompt
                 <textarea id="ai-prompt" readonly>${esc2(buildReductionPrompt(pasteMode, passage.title, passage.text))}</textarea>
               </label>
-              <div class="row">
+              <div class="row prompt-actions">
                 <button class="btn secondary" type="button" id="copy-prompt">Copy prompt</button>
-                <a class="btn secondary" id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
+                <a class="btn secondary is-disabled" id="open-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" aria-disabled="true" title="Copy the prompt first">ChatGPT</a>
+                <a class="btn secondary is-disabled" id="open-claude" href="https://claude.ai/new" target="_blank" rel="noopener noreferrer" aria-disabled="true" title="Copy the prompt first">Claude</a>
+                <span id="open-chatgpt-hint" class="empty prompt-handoff-hint" aria-live="polite">Copy the prompt first</span>
               </div>
               <label class="${pasteMissing ? "field-missing" : "field-ready"}">
                 <span class="label-row">2. Paste ChatGPT reduction <span class="req-badge ${pasteMissing ? "missing" : "ok"}">${pasteMissing ? "Required \u2014 missing" : "Saved"}</span></span>
@@ -3360,10 +3417,35 @@
         toast(`Reduce complete \u2014 proficiency: ${reduceProficiencyLabel(proficiency)}.`);
         onChanged(updated);
       });
+      const reduceServices = () => [
+        panel.querySelector("#open-chatgpt"),
+        panel.querySelector("#open-claude")
+      ];
+      const syncReduceHandoff = () => syncChatHandoff(
+        reduceServices(),
+        panel.querySelector("#open-chatgpt-hint"),
+        copiedReducePrompt,
+        panel.querySelector("#ai-prompt")?.value ?? ""
+      );
+      syncReduceHandoff();
       panel.querySelector("#copy-prompt")?.addEventListener("click", async () => {
         const text = panel.querySelector("#ai-prompt")?.value ?? "";
-        await navigator.clipboard.writeText(text);
-        toast("Prompt copied \u2014 open ChatGPT and paste it.");
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          /* unlock ChatGPT / Claude even if clipboard is blocked; the preview is still on screen */
+        }
+        copiedReducePrompt = text;
+        syncReduceHandoff();
+        toast("Prompt copied \u2014 open ChatGPT or Claude and paste it.");
+      });
+      reduceServices().forEach((a) => {
+        a?.addEventListener("click", (e) => {
+          if (!syncReduceHandoff()) {
+            e.preventDefault();
+            panel.querySelector("#copy-prompt")?.focus();
+          }
+        });
       });
       panel.querySelector("#save-reduction")?.addEventListener("click", () => {
         const pasted = panel.querySelector("#paste-reduction")?.value ?? "";
